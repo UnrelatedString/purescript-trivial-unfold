@@ -10,6 +10,7 @@ import Prelude
 
 import Data.Foldable (class Foldable, foldMap, foldrDefault, foldMapDefaultL)
 import Data.Unfoldable1 (class Unfoldable1, unfoldr1)
+import Data.Unfoldable (class Unfoldable, unfoldr)
 import Data.Tuple.Nested ((/\), type (/\))
 import Data.Maybe (Maybe(..))
 import Data.Exists (Exists, mkExists, runExists)
@@ -44,8 +45,6 @@ instance trivial1Functor :: Functor Trivial1 where
 
 -- | Returns the next element, and a new `Trivial1` generating the remaining elements
 -- | if there are any elements remaining.
--- | 
--- | `Maybe Trivial1` is itself `Unfoldable` and can be freely converted to and from `Trivial`.
 uncons1 :: forall a. Trivial1 a -> a /\ Maybe (Trivial1 a)
 uncons1 = untrivial1 eUncons1
   where eUncons1 :: forall b. Unfoldr1Call a b -> a /\ Maybe (Trivial1 a)
