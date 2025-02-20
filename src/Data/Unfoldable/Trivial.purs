@@ -2,8 +2,9 @@ module Data.Unfoldable.Trivial
  ( Trivial(..)
  , UnfoldrCall(..)
  , defaultUnfoldr1
- , foldEnum
  , uncons
+ , runTrivial
+ , foldEnum
  ) where
 
 import Prelude
@@ -22,6 +23,7 @@ data UnfoldrCall a b = UnfoldrCall (b -> Maybe (a /\ b)) b
 -- | A newtype wrapping `UnfoldrCall a b`, existentially quantified over the "seed" type `b`.
 newtype Trivial a = Trivial (Exists (UnfoldrCall a))
 derive instance Newtype (Trivial a) _
+derive instance Functor (Trivial a)
 
 -- | Wraps both arguments to `unfoldr` in an `UnfoldrCall`.
 instance trivialUnfoldable :: Unfoldable Trivial where
@@ -35,11 +37,18 @@ instance trivialUnfoldable1 :: Unfoldable1 Trivial where
 defaultUnfoldr1 :: forall a b t. Unfoldable t => (b -> a /\ Maybe b) -> b -> t a
 defaultUnfoldr1 f = unfoldr (map f) <<< Just
 
--- | Steps the "generator" forward, possibly returning an element and a new advanced generator.
+-- | Steps the "generator" forward, possibly returning an element and a new advanced `Trivial`.
 uncons :: forall a. Trivial a -> Maybe (a /\ Trivial a)
 uncons (Trivial e) = runExists eUncons e
   where eUncons :: forall b. UnfoldrCall a b -> Maybe (a /\ Trivial a)
         eUncons (UnfoldrCall f seed) = f seed <#> map (unfoldr f)
+
+-- | Converts to any other `Unfoldable`.
+-- | Can also be seen as "evaluating" the inner `UnfoldrCall`.
+runTrivial :: forall a u. Unfoldable u => Trivial a -> u a
+runTrivial (Trivial e) = runExists eRunTrivial
+  where eRunTrivial :: forall b. UnfoldrCall a b -> u a
+        eRunTrivial (UnfoldrCall f seed) = unfoldr f seed
 
 instance trivialFoldable :: Foldable Trivial where
   foldl :: forall a c. (c -> a -> c) -> c -> Trivial a -> c
@@ -52,6 +61,9 @@ instance trivialFoldable :: Foldable Trivial where
                     | otherwise = acc
   foldr f = foldrDefault f
   foldMap f = foldMapDefaultL f
+
+-- TODO: newtype wrappers for. I forgot what it was going to be for actually.
+-- I guess like probably something like, a FoldEnum ahas an Unfoldable instance that 
 
 -- | Map each element of a `BoundedEnum` into a monoid, and combine the results.
 foldEnum :: forall a b. BoundedEnum a => Monoid b => (a -> b) -> b
