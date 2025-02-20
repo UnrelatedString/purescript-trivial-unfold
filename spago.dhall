@@ -21,6 +21,8 @@ to generate this file without the comments in this block.
   , "maybe"
   , "newtype"
   , "prelude"
+  , "quickcheck" -- don't love not being able to isolate dev dependencies...
+  , "test-unit"
   , "tuples"
   , "unfoldable"
   ]

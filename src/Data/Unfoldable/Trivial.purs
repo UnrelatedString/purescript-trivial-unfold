@@ -78,7 +78,7 @@ instance trivialFoldable :: Foldable Trivial where
   foldMap f = foldMapDefaultL f
 
 -- TODO: newtype wrappers for. I forgot what it was going to be for actually.
--- I guess like probably something like, a FoldEnum ahas an Unfoldable instance that 
+-- I guess like probably something like, a FoldEnum that has an Unfoldable instance?
 
 -- | Map each element of a `BoundedEnum` into a monoid, and combine the results.
 foldEnum :: forall a b. BoundedEnum a => Monoid b => (a -> b) -> b
