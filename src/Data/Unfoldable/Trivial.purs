@@ -43,7 +43,7 @@ instance trivialFunctor :: Functor Trivial where
           eMap (UnfoldrCall g seed) = Trivial
                                     $ mkExists
                                     $ UnfoldrCall (
-                                      map (lmap f) <$> g
+                                      map (lmap f) <<< g
                                     ) seed
 
 -- | Provides a default implementation of `unfoldr1` using `unfoldr` to satisfy
