@@ -1,16 +1,15 @@
 module Data.Unfoldable1.Trivial1
  ( Trivial1(..)
  , Unfoldr1Call(..)
---  , defaultUnfoldr1
---  , uncons
---  , runTrivial
+ , uncons1
+ , runTrivial1
 --  , foldEnum
  ) where
 
 import Prelude
 
 import Data.Foldable (class Foldable, foldMap, foldrDefault, foldMapDefaultL)
-import Data.Unfoldable1 (class Unfoldable1)
+import Data.Unfoldable1 (class Unfoldable1, unfoldr1)
 import Data.Tuple.Nested ((/\), type (/\))
 import Data.Maybe (Maybe(..))
 import Data.Exists (Exists, mkExists, runExists)
@@ -42,3 +41,19 @@ instance trivial1Functor :: Functor Trivial1 where
                                      $ Unfoldr1Call (
                                        lmap f <<< g
                                      ) seed
+
+-- | Returns the next element, and a new `Trivial1` generating the remaining elements
+-- | if there are any elements remaining.
+-- | 
+-- | `Maybe Trivial1` is itself `Unfoldable` and can be freely converted to and from `Trivial`.
+uncons1 :: forall a. Trivial1 a -> a /\ Maybe (Trivial1 a)
+uncons1 = untrivial1 eUncons1
+  where eUncons1 :: forall b. Unfoldr1Call a b -> a /\ Maybe (Trivial1 a)
+        eUncons1 (Unfoldr1Call f seed) = f seed <#> map (unfoldr1 f)
+
+-- | Converts to any other `Unfoldable1`.
+-- | Can also be seen as "evaluating" the inner `Unfoldr1Call`.
+runTrivial1 :: forall a u. Unfoldable1 u => Trivial1 a -> u a
+runTrivial1 = untrivial1 eRunTrivial1
+  where eRunTrivial1 :: forall b. Unfoldr1Call a b -> u a
+        eRunTrivial1 (Unfoldr1Call f seed) = unfoldr1 f seed

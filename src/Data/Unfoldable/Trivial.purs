@@ -51,7 +51,8 @@ instance trivialFunctor :: Functor Trivial where
 defaultUnfoldr1 :: forall a b t. Unfoldable t => (b -> a /\ Maybe b) -> b -> t a
 defaultUnfoldr1 f = unfoldr (map f) <<< Just
 
--- | Steps the "generator" forward, possibly returning an element and a new advanced `Trivial`.
+-- | Returns the next element and a new `Trivial` generating the remaining elements,
+-- | or `Nothing` if there are no elements.
 uncons :: forall a. Trivial a -> Maybe (a /\ Trivial a)
 uncons = untrivial eUncons
   where eUncons :: forall b. UnfoldrCall a b -> Maybe (a /\ Trivial a)
