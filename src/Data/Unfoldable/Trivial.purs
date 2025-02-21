@@ -17,7 +17,7 @@ import Prelude
 
 import Data.Foldable (class Foldable, foldrDefault, foldMapDefaultL)
 import Data.Unfoldable (class Unfoldable, class Unfoldable1, unfoldr, unfoldr1, none)
-import Data.Tuple (fst, snd, uncurry)
+import Data.Tuple (snd, uncurry)
 import Data.Tuple.Nested ((/\), type (/\))
 import Data.Maybe (Maybe(..), maybe)
 import Data.Exists (Exists, mkExists, runExists)
@@ -81,10 +81,13 @@ uncons = untrivial eUncons
         eUncons (UnfoldrCall f seed) = f seed <#> map (unfoldr f)
 
 -- | Returns the first element, if present.
+-- |
+-- | Not particularly useful, because this is just the `Unfoldable`
+-- | instance for `Maybe`. Included by analogy with `head1`.
+-- AND because it took me like. MULTIPLE DAYS to realize this LMAO.
+-- Polymorphic return types kinda mess with my head
 head :: forall a. Trivial a -> Maybe a
-head = untrivial eHead
-  where eHead :: forall b. UnfoldrCall a b -> Maybe a
-        eHead (UnfoldrCall f seed) = fst <$> f seed
+head = runTrivial
 
 -- | Removes the first element, if present.
 tail :: forall a u. Unfoldable u => Trivial a -> u a

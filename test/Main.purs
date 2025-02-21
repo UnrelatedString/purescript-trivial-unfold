@@ -21,11 +21,15 @@ import Data.Unfoldable.Trivial
 import Data.Unfoldable1.Trivial1 (Trivial1, (::<+>))
 
 import Data.Unfoldable.Trivial.Adapter
- ( head
+ ( head1
+ , head
+ , tail1
  , tail
  , index
  , foldEnum
  , iterate
+ , cons
+ , snoc
 )
 
 import Data.Maybe (Maybe(..), isJust, isNothing)
@@ -54,6 +58,7 @@ smallSuite = suite "small stuff" do
     Assert.assert "singleton should be nonempty" $ isJust $ map (map trivial) $ uncons $ singleton unit
   test "head" do
     quickCheck \(x :: Int) -> head (singleton x) === Just x
+    quickCheck \(x :: Int) -> head1 (singleton x) === x
     quickCheck \(x :: Maybe String) -> head (fromMaybe x) === x
     quickCheck \x -> head (replicate x "ehehe") === guard (x > 0) (Just "ehehe")
     quickCheck \x (y :: Int) -> head (replicate1 x y) === Just y
@@ -68,6 +73,15 @@ smallSuite = suite "small stuff" do
     quickCheck \(x :: Char) -> head (tail $ upFrom x) === (succ =<< succ x)
   test "Maybe round trip" do
     quickCheck \(x :: Maybe Char) -> runTrivial (fromMaybe x) === x
+  test "build on none" do
+    quickCheck \(x :: Int) -> cons x none === Just x
+    quickCheck \(x :: Int) -> snoc none x === Just x
+  test "build on singleton" do
+    quickCheck \x (y :: Int) -> cons x (singleton y) === Just x
+    quickCheck \x (y :: Int) -> tail1 (cons x $ singleton y) === Just y
+    quickCheck \x (y :: Int) -> snoc (singleton y) x === Just y
+    quickCheck \x (y :: Int) -> tail1 (snoc (singleton y) x) === Just x
+
 
 foldSuite :: TestSuite
 foldSuite = suite "foldl foldr" do
