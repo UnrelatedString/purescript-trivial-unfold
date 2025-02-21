@@ -136,7 +136,7 @@ cons h t = untrivial eCons t
   where eCons :: forall b. UnfoldrCall a b -> u a
         eCons (UnfoldrCall f seed) = unfoldr1 hilbertHotel $ h /\ seed
           where hilbertHotel :: a /\ b -> a /\ Maybe (a /\ b)
-                hilbertHotel (a /\ b) = a /\ f b
+                hilbertHotel = map f
 
 -- | Append an element.
 -- |
