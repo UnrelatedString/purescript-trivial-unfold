@@ -11,41 +11,28 @@ import Test.QuickCheck.Arbitrary (class Arbitrary)
 import Test.Unit.QuickCheck (quickCheck)
 
 import Data.Unfoldable.Trivial
- ( Trivial(..)
- , UnfoldrCall(..)
+ ( Trivial
  , turbofish
- , defaultUnfoldr1
  , uncons
- , head
- , tail
  , runTrivial
- )
-
-import Data.Unfoldable1.Trivial1
- ( Trivial1(..)
- , Unfoldr1Call(..)
- , turbofish1
- , uncons1
- , head1
- , tail1
- , runTrivial1
- )
+)
 
 import Data.Unfoldable.Trivial.Adapter
- ( index
+ ( head
+ , tail
+ , index
  , foldEnum
- )
+)
 
 import Data.Maybe (Maybe(..), isJust, isNothing)
 import Data.Enum (class Enum, class BoundedEnum, succ, upFrom)
-import Data.Tuple (fst, snd)
+import Data.Tuple (snd)
 import Data.Tuple.Nested ((/\), type (/\))
 import Data.Monoid (guard)
 import Data.Semigroup.First (First(..))
 import Data.Semigroup.Last (Last(..))
 import Data.Unfoldable (none, fromMaybe, replicate)
 import Data.Unfoldable1 (singleton, replicate1)
-import Data.Newtype (unwrap)
 import Type.Proxy (Proxy(..))
 
 main :: Effect Unit
