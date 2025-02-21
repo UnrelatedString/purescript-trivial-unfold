@@ -6,18 +6,16 @@ module Data.Unfoldable.Trivial
  , head
  , tail
  , runTrivial
- , foldEnum
  ) where
 
 import Prelude
 
-import Data.Foldable (class Foldable, foldMap, foldrDefault, foldMapDefaultL)
+import Data.Foldable (class Foldable, foldrDefault, foldMapDefaultL)
 import Data.Unfoldable (class Unfoldable, class Unfoldable1, unfoldr, none)
 import Data.Tuple (fst, snd)
 import Data.Tuple.Nested ((/\), type (/\))
-import Data.Maybe (Maybe(..), fromMaybe)
+import Data.Maybe (Maybe(..), maybe)
 import Data.Exists (Exists, mkExists, runExists)
-import Data.Enum (class BoundedEnum, upFromIncluding)
 import Data.Newtype (class Newtype, unwrap)
 import Data.Bifunctor (lmap)
 
@@ -54,20 +52,22 @@ instance trivialFunctor :: Functor Trivial where
 defaultUnfoldr1 :: forall a b t. Unfoldable t => (b -> a /\ Maybe b) -> b -> t a
 defaultUnfoldr1 f = unfoldr (map f) <<< Just
 
--- | Returns the first element and a new `Trivial` generating the remaining elements,
+-- | Returns the first element and a new `Unfoldable` generating the remaining elements,
 -- | or `Nothing` if there are no elements.
-uncons :: forall a. Trivial a -> Maybe (a /\ Trivial a)
+uncons :: forall a u. Unfoldable u => Trivial a -> Maybe (a /\ u a)
 uncons = untrivial eUncons
-  where eUncons :: forall b. UnfoldrCall a b -> Maybe (a /\ Trivial a)
+  where eUncons :: forall b. UnfoldrCall a b -> Maybe (a /\ u a)
         eUncons (UnfoldrCall f seed) = f seed <#> map (unfoldr f)
 
 -- | Returns the first element, if present.
 head :: forall a. Trivial a -> Maybe a
-head = map fst <<< uncons 
+head = untrivial eHead
+  where eHead :: forall b. UnfoldrCall a b -> Maybe a
+        eHead (UnfoldrCall f seed) = fst <$> f seed
 
 -- | Removes the first element, if present.
 tail :: forall a u. Unfoldable u => Trivial a -> u a
-tail = runTrivial <<< fromMaybe none <<< map snd <<< uncons
+tail = maybe none snd <<< uncons
 
 -- | Converts to any other `Unfoldable`.
 -- | Can also be seen as "evaluating" the inner `UnfoldrCall`.
@@ -88,12 +88,3 @@ instance trivialFoldable :: Foldable Trivial where
 
   foldr f = foldrDefault f
   foldMap f = foldMapDefaultL f
-
--- TODO: newtype wrappers for. I forgot what it was going to be for actually.
--- I guess like probably something like, a FoldEnum that has an Unfoldable instance?
-
--- | Map each element of a `BoundedEnum` into a monoid, and combine the results.
-foldEnum :: forall a b. BoundedEnum a => Monoid b => (a -> b) -> b
-foldEnum f = foldMap f everything
-  where everything :: Trivial a
-        everything = upFromIncluding bottom

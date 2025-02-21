@@ -11,13 +11,24 @@ import Test.QuickCheck.Arbitrary (class Arbitrary)
 import Test.Unit.QuickCheck (quickCheck)
 
 import Data.Unfoldable.Trivial
-  ( Trivial(..)
-  , UnfoldrCall(..)
-  , defaultUnfoldr1
-  , uncons
-  , runTrivial
-  , foldEnum
-  )
+ ( Trivial(..)
+ , UnfoldrCall(..)
+ , defaultUnfoldr1
+ , uncons
+ , head
+ , tail
+ , runTrivial
+ )
+import Data.Unfoldable1.Trivial1
+ ( Trivial1(..)
+ , Unfoldr1Call(..)
+ , uncons1
+ , head1
+ , tail1
+ , runTrivial1
+ , foldEnum
+ )
+
 import Data.Maybe (Maybe(..), isJust, isNothing)
 import Data.Enum (class Enum, class BoundedEnum)
 import Data.Tuple (fst, snd)
@@ -64,5 +75,5 @@ genericBoundedEnumSuite :: forall a. BoundedEnum a => Arbitrary a => Show a =>
   String -> Proxy a -> TestSuite -> TestSuite
 genericBoundedEnumSuite name p extras = genericEnumSuite name p $ (_ <> extras) do
   test "everything" do
-    Assert.equal (Just $ First bottom) $ foldEnum $ Just <<< (First :: a -> First a)
-    Assert.equal (Just $ Last top) $ foldEnum $ Just <<< (Last :: a -> Last a)
+    Assert.equal (First bottom) $ foldEnum (First :: a -> First a)
+    Assert.equal (Last top) $ foldEnum (Last :: a -> Last a)
