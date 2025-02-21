@@ -8,7 +8,7 @@ import Test.Unit.Main (runTest)
 import Test.Unit.Assert as Assert
 import Test.QuickCheck ((===))
 import Test.QuickCheck.Arbitrary (class Arbitrary)
-import Test.Unit.QuickCheck (quickCheck)
+import Test.Unit.QuickCheck (quickCheck, quickCheck')
 
 import Data.Unfoldable.Trivial
  ( Trivial
@@ -108,9 +108,9 @@ enumSuite :: TestSuite
 enumSuite = suite "enums" do
   genericEnumSuite "Int" (Proxy :: Proxy Int) do
     test "index matches upFromIncluding" do
-      quickCheck \x y -> index (upFromIncluding x) y === if y >= 0 then Just (x + y) else Nothing
+      quickCheck' 200 \x y -> index (upFromIncluding x) y === if y >= 0 then Just (x + y) else Nothing
     test "index matches iterate" do
-      quickCheck \x -> index (iterate (_+1) 0) x === if x >= 0 then Just x else Nothing
+      quickCheck' 200 \x -> index (iterate (_+1) 0) x === if x >= 0 then Just x else Nothing
   genericBoundedEnumSuite "Char" (Proxy :: Proxy Char) $ pure unit
   genericBoundedEnumSuite "Ordering" (Proxy :: Proxy Ordering) $ pure unit
   genericBoundedEnumSuite "Boolean" (Proxy :: Proxy Boolean) $ pure unit
@@ -120,8 +120,8 @@ genericEnumSuite :: forall a. Enum a => Arbitrary a => Show a =>
   String -> Proxy a -> TestSuite -> TestSuite
 genericEnumSuite name _ extras = suite name do
   test "directionality" do
-    quickCheck \(x :: a) -> head (upFrom x) === succ x
-    quickCheck \(x :: a) -> head (downFrom x) === pred x
+    quickCheck' 100 \(x :: a) -> head (upFrom x) === succ x
+    quickCheck' 100 \(x :: a) -> head (downFrom x) === pred x
   extras
 
 genericBoundedEnumSuite :: forall a. BoundedEnum a => Arbitrary a => Show a =>
