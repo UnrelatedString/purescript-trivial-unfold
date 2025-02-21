@@ -9,6 +9,7 @@ package:
     - newtype
     - prelude
     - quickcheck
+    - tailrec
     - test-unit
     - tuples
     - unfoldable

@@ -20,6 +20,7 @@ import Data.Unfoldable.Trivial
  , tail
  , runTrivial
  )
+
 import Data.Unfoldable1.Trivial1
  ( Trivial1(..)
  , Unfoldr1Call(..)
@@ -28,6 +29,10 @@ import Data.Unfoldable1.Trivial1
  , head1
  , tail1
  , runTrivial1
+ )
+
+import Data.Unfoldable.Trivial.Adapter
+ ( index
  , foldEnum
  )
 

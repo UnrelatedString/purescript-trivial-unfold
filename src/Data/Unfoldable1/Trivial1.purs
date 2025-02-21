@@ -6,20 +6,18 @@ module Data.Unfoldable1.Trivial1
  , head1
  , tail1
  , runTrivial1
- , foldEnum
  ) where
 
 import Prelude
 
 import Data.Foldable (class Foldable, foldrDefault, foldMapDefaultL, foldl)
-import Data.Semigroup.Foldable (class Foldable1, foldr1Default, foldMap1DefaultL, foldMap1)
+import Data.Semigroup.Foldable (class Foldable1, foldr1Default, foldMap1DefaultL)
 import Data.Unfoldable1 (class Unfoldable1, unfoldr1)
 import Data.Unfoldable (class Unfoldable, none)
 import Data.Tuple (fst, snd)
 import Data.Tuple.Nested ((/\), type (/\))
 import Data.Maybe (Maybe(..), maybe)
 import Data.Exists (Exists, mkExists, runExists)
-import Data.Enum (class BoundedEnum, upFromIncluding)
 import Data.Newtype (class Newtype, unwrap)
 import Data.Bifunctor (lmap)
 
@@ -100,7 +98,3 @@ instance trivial1Foldable1 :: Foldable1 Trivial1 where
 
   foldr1 f = foldr1Default f
   foldMap1 f = foldMap1DefaultL f
-
--- | Map each element of a `BoundedEnum` into a semigroup, and combine the results.
-foldEnum :: forall a b. BoundedEnum a => Semigroup b => (a -> b) -> b
-foldEnum = flip foldMap1 $ turbofish1 $ upFromIncluding bottom
