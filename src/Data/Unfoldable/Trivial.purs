@@ -29,7 +29,7 @@ data UnfoldrCall a b = UnfoldrCall (b -> Maybe (a /\ b)) b
 newtype Trivial a = Trivial (Exists (UnfoldrCall a))
 derive instance Newtype (Trivial a) _
 
--- | Coerces its argument to `Trivial`.
+-- | Specializes its argument to `Trivial`.
 trivial :: forall a. Trivial a -> Trivial a
 trivial = identity
 

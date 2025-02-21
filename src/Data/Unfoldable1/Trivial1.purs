@@ -32,7 +32,7 @@ data Unfoldr1Call a b = Unfoldr1Call (b -> (a /\ Maybe b)) b
 newtype Trivial1 a = Trivial1 (Exists (Unfoldr1Call a))
 derive instance Newtype (Trivial1 a) _
 
--- | Coerces its argument to `Trivial1`.
+-- | Specializes its argument to `Trivial1`.
 trivial1 :: forall a. Trivial1 a -> Trivial1 a
 trivial1 = identity
 
