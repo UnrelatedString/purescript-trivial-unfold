@@ -25,7 +25,7 @@ import Data.Unfoldable.Trivial.Adapter
 )
 
 import Data.Maybe (Maybe(..), isJust, isNothing)
-import Data.Enum (class Enum, class BoundedEnum, succ, upFrom)
+import Data.Enum (class Enum, class BoundedEnum, succ, upFrom, upFromIncluding)
 import Data.Tuple (snd)
 import Data.Tuple.Nested ((/\), type (/\))
 import Data.Monoid (guard)
@@ -39,7 +39,6 @@ main :: Effect Unit
 main = runTest do
   smallSuite
   foldSuite
-  --indexSuite
   enumSuite
 
 smallSuite :: TestSuite
@@ -71,6 +70,8 @@ foldSuite = suite "fold" do
 
 enumSuite :: TestSuite
 enumSuite = suite "enums" do
+  test "index matches upFromIncluding" do
+    quickCheck \x y -> index (upFromIncluding x) y === if y >= 0 then Just (x + y) else Nothing
   genericBoundedEnumSuite "Char" (Proxy :: Proxy Char) $ pure unit
 
 genericEnumSuite :: forall a. Enum a => Arbitrary a => Show a =>
