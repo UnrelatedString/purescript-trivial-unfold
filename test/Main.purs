@@ -32,7 +32,7 @@ import Data.Unfoldable1.Trivial1
  )
 
 import Data.Maybe (Maybe(..), isJust, isNothing)
-import Data.Enum (class Enum, class BoundedEnum)
+import Data.Enum (class Enum, class BoundedEnum, succ, upFrom)
 import Data.Tuple (fst, snd)
 import Data.Tuple.Nested ((/\), type (/\))
 import Data.Monoid (guard)
@@ -52,6 +52,8 @@ smallSuite :: TestSuite
 smallSuite = suite "small stuff" do
   test "single uncons" do
     Assert.assert "none should be empty" $ isNothing $ map (map turbofish) $ uncons none
+    Assert.assert "singleton should be nonempty" $ isJust $ map (map turbofish) $ uncons none
+  test "head" do
     quickCheck \(x :: Int) -> head (singleton x) === Just x
     quickCheck \(x :: Maybe String) -> head (fromMaybe x) === x
     quickCheck \x -> head (replicate x "ehehe") === guard (x > 0) (Just "ehehe")
@@ -61,6 +63,10 @@ smallSuite = suite "small stuff" do
         double = map (map head) <<< uncons
     quickCheck \(x :: Int) -> double (singleton x) === Just (x /\ Nothing)
     quickCheck \x -> isJust (snd =<< double (replicate1 x unit)) === (x > 1)
+  test "head tail gets second element" do
+    Assert.assert "tail of none is still none" $ isNothing $ head $ tail none
+    quickCheck \(x :: String) -> head (tail $ singleton x) === Nothing
+    quickCheck \(x :: Char) -> head (tail $ upFrom x) === (succ =<< succ x)
   test "Maybe round trip" do
     quickCheck \(x :: Maybe Char) -> runTrivial (fromMaybe x) === x
 
