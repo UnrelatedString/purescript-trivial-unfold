@@ -2,6 +2,8 @@ module Data.Unfoldable1.Trivial1
  ( Trivial1(..)
  , Unfoldr1Call(..)
  , trivial1
+ , turbofish1
+ , (::<+>)
  , uncons1
  , head1
  , tail1
@@ -36,6 +38,9 @@ trivial1 = identity
 
 -- | Function application specialized to a `Trivial1` argument,
 -- | at the same precedence as `($)`.
+-- |
+-- | Inspired by the Rust syntax of the same name, often used in the
+-- | analogous context of collecting from an iterator.
 turbofish1 :: forall a b. (Trivial1 a -> b) -> Trivial1 a -> b
 turbofish1 = identity
 
@@ -72,14 +77,11 @@ head1 = untrivial1 eHead1
         eHead1 (Unfoldr1Call f seed) = fst $ f seed
 
 -- | Removes the first element.
--- embarrassed how long it took me to realize. I can just.
--- let other Unfoldables use their own Unfoldable1 instances.
--- instead of manually adapting Maybe Trivial1 into Trivial or some shit like that
 tail1 :: forall a u. Unfoldable u => Trivial1 a -> u a
 tail1 = snd <<< uncons1
 
 -- | Converts to any other `Unfoldable1`.
--- | Can also be seen as "evaluating" the inner `Unfoldr1Call`.
+-- | Can also be seen as evaluating the inner `Unfoldr1Call`.
 runTrivial1 :: forall a u. Unfoldable1 u => Trivial1 a -> u a
 runTrivial1 = untrivial1 eRunTrivial1
   where eRunTrivial1 :: forall b. Unfoldr1Call a b -> u a

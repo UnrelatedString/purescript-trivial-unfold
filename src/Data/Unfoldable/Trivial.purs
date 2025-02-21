@@ -35,6 +35,9 @@ trivial = identity
 
 -- | Function application specialized to a `Trivial` argument,
 -- | at the same precedence as `($)`.
+-- |
+-- | Inspired by the Rust syntax of the same name, often used in the
+-- | analogous context of collecting from an iterator.
 turbofish :: forall a b. (Trivial a -> b) -> Trivial a -> b
 turbofish = identity
 
@@ -84,7 +87,7 @@ tail :: forall a u. Unfoldable u => Trivial a -> u a
 tail = maybe none snd <<< uncons
 
 -- | Converts to any other `Unfoldable`.
--- | Can also be seen as "evaluating" the inner `UnfoldrCall`.
+-- | Can also be seen as evaluating the inner `UnfoldrCall`.
 runTrivial :: forall a u. Unfoldable u => Trivial a -> u a
 runTrivial = untrivial eRunTrivial
   where eRunTrivial :: forall b. UnfoldrCall a b -> u a
