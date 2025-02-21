@@ -28,7 +28,7 @@ import Data.Unfoldable1.Trivial1
  , head1
  , tail1
  , runTrivial1
- --, foldEnum
+ , foldEnum
  )
 
 import Data.Maybe (Maybe(..), isJust, isNothing)
@@ -64,6 +64,11 @@ smallSuite = suite "small stuff" do
   test "Maybe round trip" do
     quickCheck \(x :: Maybe Char) -> runTrivial (fromMaybe x) === x
 
+foldSuite :: TestSuite
+foldSuite = suite "fold" do
+  test "identities" do
+    pure unit -- TODO
+
 enumSuite :: TestSuite
 enumSuite = suite "enums" do
   genericBoundedEnumSuite "Char" (Proxy :: Proxy Char) $ pure unit
@@ -76,6 +81,6 @@ genericEnumSuite name _ extras = suite name do
 genericBoundedEnumSuite :: forall a. BoundedEnum a => Arbitrary a => Show a =>
   String -> Proxy a -> TestSuite -> TestSuite
 genericBoundedEnumSuite name p extras = genericEnumSuite name p $ (_ <> extras) do
-  test "everything" do pure unit
-    -- Assert.equal (First bottom) $ foldEnum (First :: a -> First a)
-    -- Assert.equal (Last top) $ foldEnum (Last :: a -> Last a)
+  test "everything" do
+    Assert.equal (First bottom) $ foldEnum (First :: a -> First a)
+    Assert.equal (Last top) $ foldEnum (Last :: a -> Last a)

@@ -6,12 +6,12 @@ module Data.Unfoldable1.Trivial1
  , head1
  , tail1
  , runTrivial1
- --, foldEnum
+ , foldEnum
  ) where
 
 import Prelude
 
-import Data.Foldable (class Foldable, foldrDefault, foldMapDefaultL)
+import Data.Foldable (class Foldable, foldrDefault, foldMapDefaultL, foldl)
 import Data.Semigroup.Foldable (class Foldable1, foldr1Default, foldMap1DefaultL, foldMap1)
 import Data.Unfoldable1 (class Unfoldable1, unfoldr1)
 import Data.Unfoldable (class Unfoldable, none)
@@ -22,6 +22,8 @@ import Data.Exists (Exists, mkExists, runExists)
 import Data.Enum (class BoundedEnum, upFromIncluding)
 import Data.Newtype (class Newtype, unwrap)
 import Data.Bifunctor (lmap)
+
+import Data.Unfoldable.Trivial (turbofish)
 
 -- | A constructor taking the same arguments as `unfoldr1`.
 data Unfoldr1Call a b = Unfoldr1Call (b -> (a /\ Maybe b)) b
@@ -91,10 +93,14 @@ instance trivial1Foldable :: Foldable Trivial1 where
   foldr f = foldrDefault f
   foldMap f = foldMapDefaultL f
 
--- instance trivial1Foldable1 :: Foldable1 Trivial1 where
---   foldl1 :: forall a. (a -> a -> a) -> Trivial1 a -> a
---   foldl1 f t = foldl f ()
+instance trivial1Foldable1 :: Foldable1 Trivial1 where
+  -- I feel like there might be a cleaner way to do this that's still elegant but eh
+  foldl1 :: forall a. (a -> a -> a) -> Trivial1 a -> a
+  foldl1 f t = foldl f (head1 t) $ turbofish $ tail1 t
 
--- -- | Map each element of a `BoundedEnum` into a semigroup, and combine the results.
--- foldEnum :: forall a b. BoundedEnum a => Semigroup b => (a -> b) -> b
--- foldEnum = flip foldMap1 $ turbofish1 $ upFromIncluding bottom
+  foldr1 f = foldr1Default f
+  foldMap1 f = foldMap1DefaultL f
+
+-- | Map each element of a `BoundedEnum` into a semigroup, and combine the results.
+foldEnum :: forall a b. BoundedEnum a => Semigroup b => (a -> b) -> b
+foldEnum = flip foldMap1 $ turbofish1 $ upFromIncluding bottom
