@@ -52,7 +52,7 @@ smallSuite :: TestSuite
 smallSuite = suite "small stuff" do
   test "single uncons" do
     Assert.assert "none should be empty" $ isNothing $ map (map turbofish) $ uncons none
-    Assert.assert "singleton should be nonempty" $ isJust $ map (map turbofish) $ uncons none
+    Assert.assert "singleton should be nonempty" $ isJust $ map (map turbofish) $ uncons $ singleton unit
   test "head" do
     quickCheck \(x :: Int) -> head (singleton x) === Just x
     quickCheck \(x :: Maybe String) -> head (fromMaybe x) === x
