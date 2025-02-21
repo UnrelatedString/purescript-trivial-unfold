@@ -1,7 +1,7 @@
 {
   "workspace": {
     "packages": {
-      "my-project": {
+      "trivial-unfold": {
         "path": "./",
         "core": {
           "dependencies": [

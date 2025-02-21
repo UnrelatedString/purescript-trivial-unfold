@@ -10,19 +10,22 @@ package:
     - quickcheck: "*"
     - tuples: "*"
     - unfoldable: "*"
-  name: my-project
+  name: trivial-unfold
+  description: Library providing transformers and adapters for Unfoldable.
   test:
     main: Test.Main
     dependencies:
       - control
       - test-unit
-  publish :
+  build:
+    pedanticPackages: true
+  publish:
     version: 0.1.0
     license: BSD-3-Clause
-    location: # TODO: migrate to somewhere COOLER
+    location:
+      # TODO: migrate to somewhere COOLER
       githubOwner: UnrelatedString
       githubRepo: purescript-trivial-unfold
 workspace:
-  extraPackages: {}
   packageSet:
     url: https://raw.githubusercontent.com/purescript/package-sets/psc-0.15.15-20250218/packages.json
