@@ -9,12 +9,14 @@ module Data.Unfoldable.Trivial
  , head
  , tail
  , runTrivial
+ , cons
+ , snoc
  ) where
 
 import Prelude
 
 import Data.Foldable (class Foldable, foldrDefault, foldMapDefaultL)
-import Data.Unfoldable (class Unfoldable, class Unfoldable1, unfoldr, none)
+import Data.Unfoldable (class Unfoldable, class Unfoldable1, unfoldr, unfoldr1, none)
 import Data.Tuple (fst, snd, uncurry)
 import Data.Tuple.Nested ((/\), type (/\))
 import Data.Maybe (Maybe(..), maybe)
@@ -122,3 +124,25 @@ instance trivialArbitrary :: (Arbitrary a, Coarbitrary a) => Arbitrary (Trivial 
       then Nothing
       else map ((i + 1) /\ _) <$> f b
     ) $ 0 /\ seed
+
+-- | Prepend an element.
+-- |
+-- | Do not use this to create a data structure. Please use Data.List.Lazy instead.
+cons :: forall a u. Unfoldable1 u => a -> Trivial a -> u a
+cons h t = untrivial eCons t
+  where eCons :: forall b. UnfoldrCall a b -> u a
+        eCons (UnfoldrCall f seed) = unfoldr1 hilbertHotel $ h /\ seed
+          where hilbertHotel :: a /\ b -> a /\ Maybe (a /\ b)
+                hilbertHotel (a /\ b) = a /\ f b
+
+-- | Append an element.
+-- |
+-- | Do not use this to create a data structure. Please use Data.List.Lazy instead.
+snoc :: forall a u. Unfoldable1 u => Trivial a -> a -> u a
+snoc t l = untrivial eSnoc t
+  where eSnoc :: forall b. UnfoldrCall a b -> u a
+        eSnoc (UnfoldrCall f seed) = unfoldr1 failsafed seed
+          where failsafed :: b -> a /\ Maybe b
+                failsafed b
+                  | Just (a /\ b') <- f b = a /\ Just b'
+                  | otherwise = l /\ Nothing

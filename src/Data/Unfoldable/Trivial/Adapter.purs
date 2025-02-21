@@ -14,9 +14,9 @@ module Data.Unfoldable.Trivial.Adapter
 
 import Prelude
 
-import Data.Unfoldable.Trivial (Trivial, head, tail)
+import Data.Unfoldable.Trivial (Trivial, head, tail, cons)
 import Data.Unfoldable1.Trivial1 (Trivial1, (::<+>))
-import Data.Unfoldable.Trivial (head, tail, unfoldr1Default) as Reexports
+import Data.Unfoldable.Trivial (head, tail, unfoldr1Default, cons, snoc) as Reexports
 import Data.Unfoldable1.Trivial1 (head1, tail1) as Reexports
 
 import Data.Unfoldable1 (class Unfoldable1, unfoldr1)
@@ -28,7 +28,8 @@ import Data.Tuple.Nested ((/\), type (/\))
 
 -- | Get the element at the specified 0-index, or `Nothing` if the index is out-of-bounds.
 -- |
--- | Time complexity: `O(n)` in the index. (Does not terminate early if it goes past the end!)
+-- | Time complexity: `O(n)` in the index assuming a constant-time generating function.
+-- | (Does not terminate early if it goes past the end!)
 index :: forall a. Trivial a -> Int -> Maybe a
 index t i
   | i < 0 = Nothing
@@ -91,4 +92,4 @@ unfoldrInf = unfoldr1 <<< (map Just <<< _)
 -- | This should only be used to produce either lazy types (like `Trivial`) or
 -- | types with truncating `Unfoldable1` instances (like `Maybe`).
 iterate :: forall a u. Unfoldable1 u => (a -> a) -> a -> u a
-iterate = unfoldrInf <<< (<<<) \a -> a /\ a
+iterate f seed = cons seed $ unfoldrInf (\a -> f a /\ f a) seed

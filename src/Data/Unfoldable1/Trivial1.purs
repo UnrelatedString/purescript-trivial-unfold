@@ -1,3 +1,5 @@
+-- | TODO: add module documentation ;_; I forgot I didn't do that because I DID do that in Inf
+
 module Data.Unfoldable1.Trivial1
  ( Trivial1(..)
  , Unfoldr1Call(..)
