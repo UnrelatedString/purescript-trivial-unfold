@@ -1,8 +1,6 @@
 package:
   dependencies:
     - bifunctors
-    - control
-    - effect
     - enums
     - exists
     - foldable-traversable
@@ -10,10 +8,14 @@ package:
     - newtype
     - prelude
     - quickcheck
-    - test-unit
     - tuples
     - unfoldable
   name: my-project
+  test:
+    main: Test.Main
+    dependencies:
+      - control
+      - test-unit
 workspace:
   extraPackages: {}
   packageSet:
