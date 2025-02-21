@@ -1,6 +1,7 @@
 package:
   dependencies:
     - bifunctors
+    - control
     - effect
     - enums
     - exists

@@ -6,6 +6,7 @@
         "core": {
           "dependencies": [
             "bifunctors",
+            "control",
             "effect",
             "enums",
             "exists",

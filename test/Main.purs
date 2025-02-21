@@ -33,6 +33,7 @@ import Data.Unfoldable.Trivial.Adapter
 )
 
 import Data.Maybe (Maybe(..), isJust, isNothing)
+import Control.Alternative ((<|>))
 import Data.Enum (class Enum, class BoundedEnum, succ, pred, upFrom, downFrom, upFromIncluding)
 import Data.Tuple (snd)
 import Data.Tuple.Nested ((/\), type (/\))
@@ -89,7 +90,7 @@ buildSuite = suite "build" do
     quickCheck \x (y :: Trivial1 Int) -> cons x (runTrivial1 y) === Just x
     quickCheck \x (y :: Trivial1 Int) -> head1 (snoc (runTrivial1 y) x) === head1 y
     quickCheck \x (y :: Trivial1 Int) -> tail (cons x $ runTrivial1 y) === Just (head1 y)
-    quickCheck \x (y :: Trivial1 Int) -> tail (snoc (runTrivial1 y) x) === index (runTrivial1 y) 1
+    quickCheck \x (y :: Trivial1 Int) -> tail (snoc (runTrivial1 y) x) === index (runTrivial1 y) 1 <|> Just x
 
 foldSuite :: TestSuite
 foldSuite = suite "foldl foldr" do
