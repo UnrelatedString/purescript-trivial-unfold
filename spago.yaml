@@ -1,19 +1,19 @@
 package:
   dependencies:
-  - bifunctors
-  - effect
-  - enums
-  - exists
-  - foldable-traversable
-  - maybe
-  - newtype
-  - prelude
-  - quickcheck
-  - test-unit
-  - tuples
-  - unfoldable
+    - bifunctors
+    - effect
+    - enums
+    - exists
+    - foldable-traversable
+    - maybe
+    - newtype
+    - prelude
+    - quickcheck
+    - test-unit
+    - tuples
+    - unfoldable
   name: my-project
 workspace:
-  extra_packages: {}
-  package_set:
+  extraPackages: {}
+  packageSet:
     url: https://raw.githubusercontent.com/purescript/package-sets/psc-0.15.15-20250218/packages.json
