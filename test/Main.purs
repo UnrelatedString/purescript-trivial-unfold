@@ -15,24 +15,31 @@ import Data.Unfoldable.Trivial
  , trivial
  , uncons
  , runTrivial
+ , (::<*>)
 )
+
+import Data.Unfoldable1.Trivial1 (trivial1, (::<+>))
 
 import Data.Unfoldable.Trivial.Adapter
  ( head
  , tail
  , index
  , foldEnum
+ , iterate
 )
 
 import Data.Maybe (Maybe(..), isJust, isNothing)
-import Data.Enum (class Enum, class BoundedEnum, succ, upFrom, upFromIncluding)
+import Data.Enum (class Enum, class BoundedEnum, succ, pred, upFrom, downFrom, upFromIncluding)
 import Data.Tuple (snd)
 import Data.Tuple.Nested ((/\), type (/\))
 import Data.Monoid (guard)
 import Data.Semigroup.First (First(..))
 import Data.Semigroup.Last (Last(..))
-import Data.Unfoldable (none, fromMaybe, replicate)
-import Data.Unfoldable1 (singleton, replicate1)
+import Data.Monoid.Additive (Additive)
+import Data.Unfoldable (unfoldr, none, fromMaybe, replicate)
+import Data.Unfoldable1 (unfoldr1, singleton, replicate1)
+import Data.Foldable (foldl, foldr, foldMapDefaultL, foldMapDefaultR)
+import Data.Semigroup.Foldable (foldl1, foldr1, foldMap1DefaultL, foldMap1DefaultR)
 import Type.Proxy (Proxy(..))
 
 main :: Effect Unit
@@ -64,19 +71,44 @@ smallSuite = suite "small stuff" do
     quickCheck \(x :: Maybe Char) -> runTrivial (fromMaybe x) === x
 
 foldSuite :: TestSuite
-foldSuite = suite "fold" do
-  test "identities" do
-    pure unit -- TODO
+foldSuite = suite "foldl foldr" do
+  suite "Foldable Trivial1" do
+    test "associative string concatenation agrees" do
+      quickCheck \g (x :: String) (y :: String) -> let u = trivial1 $ unfoldr1 g x
+                                                  in foldMapDefaultL identity y u === foldMapDefaultR identity y u
+  suite "Foldable Trivial" do
+    test "associative string concatenation agrees" do
+      quickCheck \g (x :: String) (y :: String) -> let u = trivial $ unfoldr g x
+                                                   in foldMapDefaultL identity y u === foldMapDefaultR identity y u
+    test "empty folds" do 
+      quickCheck \f (x :: Int) -> foldl f x ::<*> none === x
+      quickCheck \f (x :: Int) -> foldr f x ::<*> none === x
+  suite "Foldable1 Trivial1" do
+    test "associative string concatenation agrees" do
+      quickCheck \g (x :: String) -> let u = trivial1 $ unfoldr1 g x
+                                     in foldMap1DefaultL identity u === foldMap1DefaultR identity u
+    test "singleton folds" do 
+      quickCheck \f (x :: Int) -> foldl1 f ::<+> singleton x === x
+      quickCheck \f (x :: Int) -> foldr1 f ::<+> singleton x === x
 
 enumSuite :: TestSuite
 enumSuite = suite "enums" do
-  test "index matches upFromIncluding" do
-    quickCheck \x y -> index (upFromIncluding x) y === if y >= 0 then Just (x + y) else Nothing
+  genericEnumSuite "Int" (Proxy :: Proxy Int) do
+    test "index matches upFromIncluding" do
+      quickCheck \x y -> index (upFromIncluding x) y === if y >= 0 then Just (x + y) else Nothing
+    test "index matches iterate" do
+      quickCheck \x -> index (iterate (+) 0) x === if x >= 0 then Just x else Nothing
   genericBoundedEnumSuite "Char" (Proxy :: Proxy Char) $ pure unit
+  genericBoundedEnumSuite "Ordering" (Proxy :: Proxy Ordering) $ pure unit
+  genericBoundedEnumSuite "Boolean" (Proxy :: Proxy Boolean) $ pure unit
+  genericBoundedEnumSuite "Unit" (Proxy :: Proxy Unit) $ pure unit -- ...what was I thinking of doing for bounded extras again
 
 genericEnumSuite :: forall a. Enum a => Arbitrary a => Show a =>
   String -> Proxy a -> TestSuite -> TestSuite
 genericEnumSuite name _ extras = suite name do
+  test "directionality" do
+    quickCheck \(x :: a) -> head (upFrom x) === succ x
+    quickCheck \(x :: a) -> head (downFrom x) === pred x
   extras
 
 genericBoundedEnumSuite :: forall a. BoundedEnum a => Arbitrary a => Show a =>

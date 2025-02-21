@@ -4,7 +4,7 @@ module Data.Unfoldable.Trivial
  , trivial
  , turbofish
  , (::<*>)
- , defaultUnfoldr1
+ , unfoldr1Default
  , uncons
  , head
  , tail
@@ -52,7 +52,7 @@ instance trivialUnfoldable :: Unfoldable Trivial where
   unfoldr f seed = Trivial $ mkExists $ UnfoldrCall f seed
 
 instance trivialUnfoldable1 :: Unfoldable1 Trivial where
-  unfoldr1 = defaultUnfoldr1
+  unfoldr1 = unfoldr1Default
 
 instance trivialFunctor :: Functor Trivial where
   map :: forall a c. (a -> c) -> Trivial a -> Trivial c
@@ -66,8 +66,8 @@ instance trivialFunctor :: Functor Trivial where
 
 -- | Provides a default implementation of `unfoldr1` using `unfoldr` to satisfy
 -- | the superclass bound on `Unfoldable`.
-defaultUnfoldr1 :: forall a b t. Unfoldable t => (b -> a /\ Maybe b) -> b -> t a
-defaultUnfoldr1 f = unfoldr (map f) <<< Just
+unfoldr1Default :: forall a b t. Unfoldable t => (b -> a /\ Maybe b) -> b -> t a
+unfoldr1Default f = unfoldr (map f) <<< Just
 
 -- | Returns the first element and a new `Unfoldable` generating the remaining elements,
 -- | or `Nothing` if there are no elements.
