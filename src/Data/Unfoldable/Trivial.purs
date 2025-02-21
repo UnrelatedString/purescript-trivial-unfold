@@ -15,12 +15,14 @@ import Prelude
 
 import Data.Foldable (class Foldable, foldrDefault, foldMapDefaultL)
 import Data.Unfoldable (class Unfoldable, class Unfoldable1, unfoldr, none)
-import Data.Tuple (fst, snd)
+import Data.Tuple (fst, snd, uncurry)
 import Data.Tuple.Nested ((/\), type (/\))
 import Data.Maybe (Maybe(..), maybe)
 import Data.Exists (Exists, mkExists, runExists)
 import Data.Newtype (class Newtype, unwrap)
 import Data.Bifunctor (lmap)
+import Test.QuickCheck.Arbitrary (class Arbitrary, class Coarbitrary, arbitrary)
+import Test.QuickCheck.Gen (sized)
 
 -- | A constructor taking the same arguments as `unfoldr`.
 data UnfoldrCall a b = UnfoldrCall (b -> Maybe (a /\ b)) b
@@ -109,3 +111,14 @@ instance trivialFoldable :: Foldable Trivial where
 
   foldr f = foldrDefault f
   foldMap f = foldMapDefaultL f
+
+-- | Guaranteed finite.
+instance trivialArbitrary :: (Arbitrary a, Coarbitrary a) => Arbitrary (Trivial a) where
+  arbitrary = sized \size -> do
+    (f :: a -> Maybe (a /\ a)) <- arbitrary 
+    seed <- arbitrary
+    pure $ unfoldr (uncurry \i b -> 
+      if i >= size
+      then Nothing
+      else map ((i + 1) /\ _) <$> f b
+    ) $ 0 /\ seed

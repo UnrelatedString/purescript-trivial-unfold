@@ -16,12 +16,14 @@ import Data.Foldable (class Foldable, foldrDefault, foldMapDefaultL, foldl)
 import Data.Semigroup.Foldable (class Foldable1, foldr1Default, foldMap1DefaultL)
 import Data.Unfoldable1 (class Unfoldable1, unfoldr1)
 import Data.Unfoldable (class Unfoldable, none)
-import Data.Tuple (fst, snd)
+import Data.Tuple (fst, snd, uncurry)
 import Data.Tuple.Nested ((/\), type (/\))
 import Data.Maybe (Maybe(..), maybe)
 import Data.Exists (Exists, mkExists, runExists)
 import Data.Newtype (class Newtype, unwrap)
 import Data.Bifunctor (lmap)
+import Test.QuickCheck.Arbitrary (class Arbitrary, class Coarbitrary, arbitrary)
+import Test.QuickCheck.Gen (sized)
 
 import Data.Unfoldable.Trivial ((::<*>))
 
@@ -113,3 +115,15 @@ instance trivial1Foldable1 :: Foldable1 Trivial1 where
 
   foldr1 f = foldr1Default f
   foldMap1 f = foldMap1DefaultL f
+
+-- | Guaranteed finite.
+instance trivialArbitrary :: (Arbitrary a, Coarbitrary a) => Arbitrary (Trivial1 a) where
+  arbitrary = sized \size -> do
+    (f :: a -> a /\ Maybe a) <- arbitrary 
+    seed <- arbitrary
+    pure $ unfoldr1 (uncurry \i b ->
+      f b <#> \b' ->
+        if i >= size
+        then Nothing
+        else ((i + 1) /\ _) <$> b'
+    ) $ 0 /\ seed

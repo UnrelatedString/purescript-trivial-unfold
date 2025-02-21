@@ -8,7 +8,7 @@ import Test.Unit.Main (runTest)
 import Test.Unit.Assert as Assert
 import Test.QuickCheck ((===))
 import Test.QuickCheck.Arbitrary (class Arbitrary)
-import Test.Unit.QuickCheck (quickCheck, quickCheck')
+import Test.Unit.QuickCheck (quickCheck)
 
 import Data.Unfoldable.Trivial
  ( Trivial
@@ -18,7 +18,7 @@ import Data.Unfoldable.Trivial
  , (::<*>)
 )
 
-import Data.Unfoldable1.Trivial1 (trivial1, (::<+>))
+import Data.Unfoldable1.Trivial1 (Trivial1, (::<+>))
 
 import Data.Unfoldable.Trivial.Adapter
  ( head
@@ -35,12 +35,11 @@ import Data.Tuple.Nested ((/\), type (/\))
 import Data.Monoid (guard)
 import Data.Semigroup.First (First(..))
 import Data.Semigroup.Last (Last(..))
-import Data.Unfoldable (unfoldr, none, fromMaybe, replicate)
-import Data.Unfoldable1 (unfoldr1, singleton, replicate1)
+import Data.Unfoldable (none, fromMaybe, replicate)
+import Data.Unfoldable1 (singleton, replicate1)
 import Data.Foldable (foldl, foldr, foldMapDefaultL, foldMapDefaultR)
 import Data.Semigroup.Foldable (foldl1, foldr1, foldMap1DefaultL, foldMap1DefaultR)
 import Type.Proxy (Proxy(..))
-import Data.List (List, toUnfoldable)
 
 main :: Effect Unit
 main = runTest do
@@ -74,22 +73,19 @@ foldSuite :: TestSuite
 foldSuite = suite "foldl foldr" do
   suite "Foldable Trivial1" do
     test "associative string concatenation agrees" do
-      quickCheck \(l :: List String) ->
-        let u = trivial1 $ toUnfoldable l
-        in foldMapDefaultL identity u === foldMapDefaultR identity u
+      quickCheck \(u :: Trivial1 String) ->
+        foldMapDefaultL identity u === foldMapDefaultR identity u
   suite "Foldable Trivial" do
     test "associative string concatenation agrees" do
-      quickCheck \(l :: List String) ->
-        let u = trivial $ toUnfoldable l
-        in foldMapDefaultL identity u === foldMapDefaultR identity u
+      quickCheck \(u :: Trivial String) ->
+        foldMapDefaultL identity u === foldMapDefaultR identity u
     test "empty folds" do 
       quickCheck \(f :: Int -> String -> Int) x -> (foldl f x ::<*> none) === x
       quickCheck \(f :: String -> Int -> Int) x -> (foldr f x ::<*> none) === x
   suite "Foldable1 Trivial1" do
     test "associative string concatenation agrees" do
-      quickCheck \(l :: List String) ->
-        let u = trivial1 $ toUnfoldable l
-        in foldMap1DefaultL identity u === foldMap1DefaultR identity u
+      quickCheck \(u :: Trivial1 String) ->
+        foldMap1DefaultL identity u === foldMap1DefaultR identity u
     test "singleton folds" do 
       quickCheck \f (x :: Int) -> (foldl1 f ::<+> singleton x) === x
       quickCheck \f (x :: Int) -> (foldr1 f ::<+> singleton x) === x
