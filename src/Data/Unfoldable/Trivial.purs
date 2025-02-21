@@ -93,6 +93,10 @@ runTrivial = untrivial eRunTrivial
   where eRunTrivial :: forall b. UnfoldrCall a b -> u a
         eRunTrivial (UnfoldrCall f seed) = unfoldr f seed
 
+-- | The *raison d'être* for `Trivial`.
+-- | Allows folding polymorphic `Unfoldable`s as they generate.
+-- |
+-- | `foldr` uses a default implementation and may be inefficient.
 instance trivialFoldable :: Foldable Trivial where
   foldl :: forall a c. (c -> a -> c) -> c -> Trivial a -> c
   foldl f foldInit = untrivial eFoldl

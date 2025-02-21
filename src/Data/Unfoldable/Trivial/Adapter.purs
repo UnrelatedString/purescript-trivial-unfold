@@ -7,7 +7,7 @@ module Data.Unfoldable.Trivial.Adapter
 import Prelude
 
 import Data.Unfoldable.Trivial (Trivial, head, tail)
-import Data.Unfoldable1.Trivial1 ((::<+>))
+import Data.Unfoldable1.Trivial1 (Trivial1, (::<+>))
 import Data.Unfoldable.Trivial (head, tail, defaultUnfoldr1) as Reexports
 import Data.Unfoldable1.Trivial1 (head1, tail1) as Reexports
 
@@ -24,7 +24,7 @@ index t i
   | i == 0 = head t
   | otherwise = index (tail t) (i - 1)
 
--- | Map each element of a `BoundedEnum` into a semigroup through `Trivial1`,
--- | and combine the results.
+-- | Map each element of a `BoundedEnum` into a semigroup,
+-- | and combine the results through `Foldable1 Trivial1`.
 foldEnum :: forall a b. BoundedEnum a => Semigroup b => (a -> b) -> b
 foldEnum = flip foldMap1 ::<+> upFromIncluding bottom

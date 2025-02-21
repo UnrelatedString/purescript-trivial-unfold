@@ -100,6 +100,12 @@ instance trivial1Foldable :: Foldable Trivial1 where
   foldr f = foldrDefault f
   foldMap f = foldMapDefaultL f
 
+-- | The *raison d'être* for `Trivial1`.
+-- | Allows folding polymorphic `Unfoldable1`s as they generate
+-- | with no explicit starting value. In particular, `foldMap1`
+-- | needs map only into a `Semigroup` rather than a `Monoid`.
+-- |
+-- | `foldr1` uses a default implementation and may be inefficient.
 instance trivial1Foldable1 :: Foldable1 Trivial1 where
   -- I feel like there might be a cleaner way to do this that's still elegant but eh
   foldl1 :: forall a. (a -> a -> a) -> Trivial1 a -> a
