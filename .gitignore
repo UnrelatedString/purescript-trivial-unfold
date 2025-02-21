@@ -8,3 +8,16 @@ node_modules
 .psci
 output
 generated-docs
+
+# Copy pasted from what spago init does because there's probably some stuff that doesn't overlap
+bower_components/
+node_modules/
+.pulp-cache/
+output/
+output-es/
+generated-docs/
+.psc-package/
+.psc*
+.purs*
+.psa*
+.spago
