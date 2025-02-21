@@ -38,6 +38,8 @@ import Type.Proxy (Proxy(..))
 main :: Effect Unit
 main = runTest do
   smallSuite
+  foldSuite
+  --indexSuite
   enumSuite
 
 smallSuite :: TestSuite
