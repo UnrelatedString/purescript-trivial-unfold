@@ -2,6 +2,8 @@ module Data.Unfoldable1.Trivial1
  ( Trivial1(..)
  , Unfoldr1Call(..)
  , uncons1
+ , head1
+ , tail1
  , runTrivial1
 --  , foldEnum
  ) where
@@ -10,9 +12,10 @@ import Prelude
 
 import Data.Foldable (class Foldable, foldMap, foldrDefault, foldMapDefaultL)
 import Data.Unfoldable1 (class Unfoldable1, unfoldr1)
-import Data.Unfoldable (class Unfoldable, unfoldr)
+import Data.Unfoldable (class Unfoldable, none)
+import Data.Tuple (fst, snd)
 import Data.Tuple.Nested ((/\), type (/\))
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe(..), maybe)
 import Data.Exists (Exists, mkExists, runExists)
 import Data.Enum (class BoundedEnum, upFromIncluding)
 import Data.Newtype (class Newtype, unwrap)
@@ -43,12 +46,23 @@ instance trivial1Functor :: Functor Trivial1 where
                                        lmap f <<< g
                                      ) seed
 
--- | Returns the next element, and a new `Trivial1` generating the remaining elements
+-- | Returns the first element, and a new `Trivial1` generating the remaining elements
 -- | if there are any elements remaining.
 uncons1 :: forall a. Trivial1 a -> a /\ Maybe (Trivial1 a)
 uncons1 = untrivial1 eUncons1
   where eUncons1 :: forall b. Unfoldr1Call a b -> a /\ Maybe (Trivial1 a)
         eUncons1 (Unfoldr1Call f seed) = f seed <#> map (unfoldr1 f)
+
+-- | Returns the first element.
+head1 :: forall a. Trivial1 a -> a
+head1 = fst <<< uncons1
+
+-- | Removes the first element.
+-- embarrassed how long it took me to realize. I can just.
+-- let other Unfoldables use their own Unfoldable1 instances.
+-- instead of manually adapting Maybe Trivial1 into Trivial or some shit like that
+tail1 :: forall a u. Unfoldable u => Trivial1 a -> u a
+tail1 = maybe none runTrivial1 <<< snd <<< uncons1
 
 -- | Converts to any other `Unfoldable1`.
 -- | Can also be seen as "evaluating" the inner `Unfoldr1Call`.
