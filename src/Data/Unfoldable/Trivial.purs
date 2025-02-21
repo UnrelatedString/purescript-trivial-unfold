@@ -2,6 +2,8 @@ module Data.Unfoldable.Trivial
  ( Trivial(..)
  , UnfoldrCall(..)
  , trivial
+ , turbofish
+ , (::<*>)
  , defaultUnfoldr1
  , uncons
  , head
@@ -30,6 +32,13 @@ derive instance Newtype (Trivial a) _
 -- | Coerces its argument to `Trivial`.
 trivial :: forall a. Trivial a -> Trivial a
 trivial = identity
+
+-- | Function application specialized to a `Trivial` argument,
+-- | at the same precedence as `($)`.
+turbofish :: forall a b. (Trivial a -> b) -> Trivial a -> b
+turbofish = identity
+
+infixr 0 turbofish as ::<*>
 
 -- | Internal helper for implementing functions on Trivial.
 untrivial :: forall a c. (forall b. UnfoldrCall a b -> c) -> Trivial a -> c

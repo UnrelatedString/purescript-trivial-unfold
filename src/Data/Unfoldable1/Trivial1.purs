@@ -21,7 +21,7 @@ import Data.Exists (Exists, mkExists, runExists)
 import Data.Newtype (class Newtype, unwrap)
 import Data.Bifunctor (lmap)
 
-import Data.Unfoldable.Trivial (trivial)
+import Data.Unfoldable.Trivial ((::<*>))
 
 -- | A constructor taking the same arguments as `unfoldr1`.
 data Unfoldr1Call a b = Unfoldr1Call (b -> (a /\ Maybe b)) b
@@ -33,6 +33,13 @@ derive instance Newtype (Trivial1 a) _
 -- | Coerces its argument to `Trivial1`.
 trivial1 :: forall a. Trivial1 a -> Trivial1 a
 trivial1 = identity
+
+-- | Function application specialized to a `Trivial1` argument,
+-- | at the same precedence as `($)`.
+turbofish1 :: forall a b. (Trivial1 a -> b) -> Trivial1 a -> b
+turbofish1 = identity
+
+infixr 0 turbofish1 as ::<+>
 
 -- | Internal helper for implementing functions on Trivial1.
 untrivial1 :: forall a c. (forall b. Unfoldr1Call a b -> c) -> Trivial1 a -> c
@@ -94,7 +101,7 @@ instance trivial1Foldable :: Foldable Trivial1 where
 instance trivial1Foldable1 :: Foldable1 Trivial1 where
   -- I feel like there might be a cleaner way to do this that's still elegant but eh
   foldl1 :: forall a. (a -> a -> a) -> Trivial1 a -> a
-  foldl1 f t = foldl f (head1 t) $ trivial $ tail1 t
+  foldl1 f t = foldl f (head1 t) ::<*> tail1 t
 
   foldr1 f = foldr1Default f
   foldMap1 f = foldMap1DefaultL f
