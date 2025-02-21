@@ -1,11 +1,12 @@
 module Data.Unfoldable1.Trivial1
  ( Trivial1(..)
  , Unfoldr1Call(..)
+ , turbofish1
  , uncons1
  , head1
  , tail1
  , runTrivial1
- , foldEnum
+ --, foldEnum
  ) where
 
 import Prelude
@@ -16,7 +17,7 @@ import Data.Unfoldable1 (class Unfoldable1, unfoldr1)
 import Data.Unfoldable (class Unfoldable, none)
 import Data.Tuple (fst, snd)
 import Data.Tuple.Nested ((/\), type (/\))
-import Data.Maybe (Maybe(..), maybe, fromMaybe)
+import Data.Maybe (Maybe(..), maybe)
 import Data.Exists (Exists, mkExists, runExists)
 import Data.Enum (class BoundedEnum, upFromIncluding)
 import Data.Newtype (class Newtype, unwrap)
@@ -28,6 +29,10 @@ data Unfoldr1Call a b = Unfoldr1Call (b -> (a /\ Maybe b)) b
 -- | A newtype wrapping `Unfoldr1Call a b`, existentially quantified over the "seed" type `b`.
 newtype Trivial1 a = Trivial1 (Exists (Unfoldr1Call a))
 derive instance Newtype (Trivial1 a) _
+
+-- | Coerces its argument to `Trivial1`.
+turbofish1 :: forall a. Trivial1 a -> Trivial1 a
+turbofish1 = identity
 
 -- | Internal helper for implementing functions on Trivial1.
 untrivial1 :: forall a c. (forall b. Unfoldr1Call a b -> c) -> Trivial1 a -> c
@@ -55,7 +60,9 @@ uncons1 = untrivial1 eUncons1
 
 -- | Returns the first element.
 head1 :: forall a. Trivial1 a -> a
-head1 = fst <<< uncons1
+head1 = untrivial1 eHead1
+  where eHead1 :: forall b. Unfoldr1Call a b -> a
+        eHead1 (Unfoldr1Call f seed) = fst $ f seed
 
 -- | Removes the first element.
 -- embarrassed how long it took me to realize. I can just.
@@ -77,8 +84,9 @@ instance trivial1Foldable :: Foldable Trivial1 where
     where eFoldl :: forall b. Unfoldr1Call a b -> c
           eFoldl (Unfoldr1Call g unfoldSeed) = lockstep unfoldSeed foldInit
             where lockstep :: b -> c -> c
-                  lockstep seed acc -- whyyyyy can't it tell that the pattern would be exhaustive
-                    | a /\ maybeSeed' <- g seed = fromMaybe identity (lockstep <$> maybeSeed') $ f acc a
+                  lockstep seed acc
+                    | a /\ Just seed' <- g seed = lockstep seed' $ f acc a
+                    | otherwise = f acc $ fst $ g seed
 
   foldr f = foldrDefault f
   foldMap f = foldMapDefaultL f
@@ -87,6 +95,6 @@ instance trivial1Foldable :: Foldable Trivial1 where
 --   foldl1 :: forall a. (a -> a -> a) -> Trivial1 a -> a
 --   foldl1 f t = foldl f ()
 
--- | Map each element of a `BoundedEnum` into a semigroup, and combine the results.
-foldEnum :: forall a b. BoundedEnum a => Semigroup b => (a -> b) -> b
-foldEnum = flip foldMap1 $ upFromIncluding bottom
+-- -- | Map each element of a `BoundedEnum` into a semigroup, and combine the results.
+-- foldEnum :: forall a b. BoundedEnum a => Semigroup b => (a -> b) -> b
+-- foldEnum = flip foldMap1 $ turbofish1 $ upFromIncluding bottom

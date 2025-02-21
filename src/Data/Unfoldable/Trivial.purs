@@ -1,6 +1,7 @@
 module Data.Unfoldable.Trivial
  ( Trivial(..)
  , UnfoldrCall(..)
+ , turbofish
  , defaultUnfoldr1
  , uncons
  , head
@@ -25,6 +26,10 @@ data UnfoldrCall a b = UnfoldrCall (b -> Maybe (a /\ b)) b
 -- | A newtype wrapping `UnfoldrCall a b`, existentially quantified over the "seed" type `b`.
 newtype Trivial a = Trivial (Exists (UnfoldrCall a))
 derive instance Newtype (Trivial a) _
+
+-- | Coerces its argument to `Trivial`.
+turbofish :: forall a. Trivial a -> Trivial a
+turbofish = identity
 
 -- | Internal helper for implementing functions on Trivial.
 untrivial :: forall a c. (forall b. UnfoldrCall a b -> c) -> Trivial a -> c
