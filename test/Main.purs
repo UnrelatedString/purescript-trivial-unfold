@@ -18,7 +18,7 @@ import Data.Unfoldable.Trivial
  , (::<*>)
 )
 
-import Data.Unfoldable1.Trivial1 (Trivial1, (::<+>))
+import Data.Unfoldable1.Trivial1 (Trivial1, runTrivial1, (::<+>))
 
 import Data.Unfoldable.Trivial.Adapter
  ( head1
@@ -48,6 +48,7 @@ import Type.Proxy (Proxy(..))
 main :: Effect Unit
 main = runTest do
   smallSuite
+  buildSuite
   foldSuite
   enumSuite
 
@@ -73,6 +74,9 @@ smallSuite = suite "small stuff" do
     quickCheck \(x :: Char) -> head (tail $ upFrom x) === (succ =<< succ x)
   test "Maybe round trip" do
     quickCheck \(x :: Maybe Char) -> runTrivial (fromMaybe x) === x
+
+buildSuite :: TestSuite
+buildSuite = suite "build" do
   test "build on none" do
     quickCheck \(x :: Int) -> cons x none === Just x
     quickCheck \(x :: Int) -> snoc none x === Just x
@@ -81,7 +85,11 @@ smallSuite = suite "small stuff" do
     quickCheck \x (y :: Int) -> tail1 (cons x $ singleton y) === Just y
     quickCheck \x (y :: Int) -> snoc (singleton y) x === Just y
     quickCheck \x (y :: Int) -> tail1 (snoc (singleton y) x) === Just x
-
+  test "build on Unfoldable1" do
+    quickCheck \x (y :: Trivial1 Int) -> cons x (runTrivial1 y) === Just x
+    quickCheck \x (y :: Trivial1 Int) -> head1 (snoc (runTrivial1 y) x) === head1 y
+    quickCheck \x (y :: Trivial1 Int) -> tail (cons x $ runTrivial1 y) === Just (head1 y)
+    quickCheck \x (y :: Trivial1 Int) -> tail (snoc (runTrivial1 y) x) === index (runTrivial1 y) 1
 
 foldSuite :: TestSuite
 foldSuite = suite "foldl foldr" do
