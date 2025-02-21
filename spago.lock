@@ -5,16 +5,36 @@
         "path": "./",
         "core": {
           "dependencies": [
-            "bifunctors",
-            "enums",
-            "exists",
-            "foldable-traversable",
-            "maybe",
-            "newtype",
-            "prelude",
-            "quickcheck",
-            "tuples",
-            "unfoldable"
+            {
+              "bifunctors": "*"
+            },
+            {
+              "enums": "*"
+            },
+            {
+              "exists": "*"
+            },
+            {
+              "foldable-traversable": "*"
+            },
+            {
+              "maybe": "*"
+            },
+            {
+              "newtype": "*"
+            },
+            {
+              "prelude": "*"
+            },
+            {
+              "quickcheck": "*"
+            },
+            {
+              "tuples": "*"
+            },
+            {
+              "unfoldable": "*"
+            }
           ],
           "build_plan": [
             "arrays",

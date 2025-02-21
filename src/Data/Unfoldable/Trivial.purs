@@ -1,3 +1,7 @@
+-- | This module provides the `Trivial` type as an existentially quantified
+-- | dumb wrapper around `unfold`, which can be inspected and manipulated
+-- | to implement various typeclasses and the utilities in Data.Unfoldable.Trivial.Adapter.
+
 module Data.Unfoldable.Trivial
  ( Trivial(..)
  , UnfoldrCall(..)

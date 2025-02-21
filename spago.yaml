@@ -1,21 +1,27 @@
 package:
   dependencies:
-    - bifunctors
-    - enums
-    - exists
-    - foldable-traversable
-    - maybe
-    - newtype
-    - prelude
-    - quickcheck
-    - tuples
-    - unfoldable
+    - bifunctors: "*"
+    - enums: "*"
+    - exists: "*"
+    - foldable-traversable: "*"
+    - maybe: "*"
+    - newtype: "*"
+    - prelude: "*"
+    - quickcheck: "*"
+    - tuples: "*"
+    - unfoldable: "*"
   name: my-project
   test:
     main: Test.Main
     dependencies:
       - control
       - test-unit
+  publish :
+    version: 0.1.0
+    license: BSD-3-Clause
+    location: # TODO: migrate to somewhere COOLER
+      githubOwner: UnrelatedString
+      githubRepo: purescript-trivial-unfold
 workspace:
   extraPackages: {}
   packageSet:

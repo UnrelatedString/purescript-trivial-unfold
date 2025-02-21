@@ -1,4 +1,6 @@
--- | TODO: add module documentation ;_; I forgot I didn't do that because I DID do that in Inf
+-- | This module provides the `Trivial1` type as an existentially quantified
+-- | dumb wrapper around `unfold1`, which can be inspected and manipulated
+-- | to implement various typeclasses and the utilities in Data.Unfoldable.Trivial.Adapter.
 
 module Data.Unfoldable1.Trivial1
  ( Trivial1(..)
