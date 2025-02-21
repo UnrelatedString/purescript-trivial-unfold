@@ -8,6 +8,8 @@ module Data.Unfoldable.Trivial.Adapter
  , refold
  , refold1
  , foldEnum
+ , unfoldrInf
+ , iterate
  ) where
 
 import Prelude
@@ -17,10 +19,12 @@ import Data.Unfoldable1.Trivial1 (Trivial1, (::<+>))
 import Data.Unfoldable.Trivial (head, tail, defaultUnfoldr1) as Reexports
 import Data.Unfoldable1.Trivial1 (head1, tail1) as Reexports
 
+import Data.Unfoldable1 (class Unfoldable1, unfoldr1)
 import Data.Foldable (foldl, foldMap, fold)
 import Data.Semigroup.Foldable (foldl1, foldMap1, fold1)
 import Data.Maybe (Maybe(..))
 import Data.Enum (class BoundedEnum, upFromIncluding)
+import Data.Tuple.Nested ((/\), type (/\))
 
 -- | Get the element at the specified 0-index, or `Nothing` if the index is out-of-bounds.
 -- |
@@ -71,3 +75,20 @@ refold1 = fold1
 -- | and combine the results through `refold1`.
 foldEnum :: forall a b. BoundedEnum a => Semigroup b => (a -> b) -> b
 foldEnum = flip foldMap1 ::<+> upFromIncluding bottom
+
+-- | Unfold an infinite `Unfoldable1`.
+-- | Analogous to `unfold1` and `unfold`, but with no way to signal termination;
+-- | `unfoldInf f b` consists of `fst $ f b` appended to `unfoldInf f $ snd $ f b`.
+-- |
+-- | This should only be used to produce either lazy types (like `Trivial`) or
+-- | types with truncating `Unfoldable1` instances (like `Maybe`).
+unfoldrInf :: forall a b u. Unfoldable1 u => (b -> a /\ b) -> b -> u a
+unfoldrInf = unfoldr1 <<< (map Just <<< _)
+
+-- | Create an infinite `Unfoldable1` by repeated application of a function to a seed value. 
+-- | Analogous to `iterateN`, but with no iteration limit.
+-- |
+-- | This should only be used to produce either lazy types (like `Trivial`) or
+-- | types with truncating `Unfoldable1` instances (like `Maybe`).
+iterate :: forall a u. Unfoldable1 u => (a -> a) -> a -> u a
+iterate = unfoldrInf <<< (<<<) \a -> a /\ a
