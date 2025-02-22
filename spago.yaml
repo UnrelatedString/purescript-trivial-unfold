@@ -28,4 +28,4 @@ package:
       githubRepo: purescript-trivial-unfold
 workspace:
   packageSet:
-    url: https://raw.githubusercontent.com/purescript/package-sets/psc-0.15.15-20250218/packages.json
+    registry: 63.2.1
