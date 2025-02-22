@@ -6,34 +6,34 @@
         "core": {
           "dependencies": [
             {
-              "bifunctors": "*"
+              "bifunctors": ">=6.0.0 <7.0.0"
             },
             {
-              "enums": "*"
+              "enums": ">=6.0.1 <7.0.0"
             },
             {
-              "exists": "*"
+              "exists": ">=6.0.0 <7.0.0"
             },
             {
-              "foldable-traversable": "*"
+              "foldable-traversable": ">=6.0.0 <7.0.0"
             },
             {
-              "maybe": "*"
+              "maybe": ">=6.0.0 <7.0.0"
             },
             {
-              "newtype": "*"
+              "newtype": ">=5.0.0 <6.0.0"
             },
             {
-              "prelude": "*"
+              "prelude": ">=6.0.2 <7.0.0"
             },
             {
-              "quickcheck": "*"
+              "quickcheck": ">=8.0.1 <9.0.0"
             },
             {
-              "tuples": "*"
+              "tuples": ">=7.0.0 <8.0.0"
             },
             {
-              "unfoldable": "*"
+              "unfoldable": ">=6.0.0 <7.0.0"
             }
           ],
           "build_plan": [

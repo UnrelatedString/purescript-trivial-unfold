@@ -1,15 +1,15 @@
 package:
   dependencies:
-    - bifunctors: "*"
-    - enums: "*"
-    - exists: "*"
-    - foldable-traversable: "*"
-    - maybe: "*"
-    - newtype: "*"
-    - prelude: "*"
-    - quickcheck: "*"
-    - tuples: "*"
-    - unfoldable: "*"
+    - bifunctors: ">=6.0.0 <7.0.0"
+    - enums: ">=6.0.1 <7.0.0"
+    - exists: ">=6.0.0 <7.0.0"
+    - foldable-traversable: ">=6.0.0 <7.0.0"
+    - maybe: ">=6.0.0 <7.0.0"
+    - newtype: ">=5.0.0 <6.0.0"
+    - prelude: ">=6.0.2 <7.0.0"
+    - quickcheck: ">=8.0.1 <9.0.0"
+    - tuples: ">=7.0.0 <8.0.0"
+    - unfoldable: ">=6.0.0 <7.0.0"
   name: trivial-unfold
   description: Library providing transformers and adapters for Unfoldable.
   test:
