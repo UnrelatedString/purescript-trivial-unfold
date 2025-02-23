@@ -1,4 +1,4 @@
-[![CI](https://github.com/UnrelatedString/purescript-trivial-unfold/workflows/CI/badge.svg?branch=main)](https://github.com/UnrelatedString/purescript-trivial-unfold/actions?query=workflow%3ACI+branch%3Amain)
+[![CI](https://github.com/UnrelatedString/purescript-trivial-unfold/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/UnrelatedString/purescript-trivial-unfold/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/release/UnrelatedString/purescript-trivial-unfold.svg)](https://github.com/UnrelatedString/purescript-trivial-unfold/releases)
 [![Pursuit](https://pursuit.purescript.org/packages/purescript-trivial-unfold/badge)](https://pursuit.purescript.org/packages/purescript-trivial-unfold)
 
