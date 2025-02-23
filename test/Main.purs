@@ -154,7 +154,7 @@ exampleInTheReadmeTest = test "Example in the README" $
     equals 'z'
   
   where equals :: forall a. Show a => a -> Consumer_ String Aff Unit
-        equals value = pure unit -- await >>= lift (Assert.equal $ show value)
+        equals value = await >>= lift <<< Assert.equal (show value)
 
 -- it took me embarrassingly long to realize Identity doesn't just, like,
 -- automatically coerce to literally any other monad :p
