@@ -1,5 +1,5 @@
 [![CI](https://github.com/UnrelatedString/purescript-trivial-unfold/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/UnrelatedString/purescript-trivial-unfold/actions/workflows/ci.yml)
-[![Release](https://img.shields.io/github/release/UnrelatedString/purescript-trivial-unfold.svg)](https://github.com/UnrelatedString/purescript-trivial-unfold/releases)
+![Latest Version Tag](https://img.shields.io/github/v/tag/UnrelatedString/purescript-trivial-unfold)
 [![Pursuit](https://pursuit.purescript.org/packages/purescript-trivial-unfold/badge)](https://pursuit.purescript.org/packages/purescript-trivial-unfold)
 
 # purescript-trivial-unfold
