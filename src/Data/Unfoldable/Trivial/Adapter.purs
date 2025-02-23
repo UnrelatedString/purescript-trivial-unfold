@@ -6,6 +6,8 @@ module Data.Unfoldable.Trivial.Adapter
  , index
  , refoldl
  , refoldl1
+ , refoldr
+ , refoldr1
  , refoldMap
  , refoldMap1
  , refold
@@ -23,8 +25,8 @@ import Data.Unfoldable.Trivial (head, tail, unfoldr1Default, cons, snoc) as Reex
 import Data.Unfoldable1.Trivial1 (head1, tail1) as Reexports
 
 import Data.Unfoldable1 (class Unfoldable1, unfoldr1)
-import Data.Foldable (foldl, foldMap, fold)
-import Data.Semigroup.Foldable (foldl1, foldMap1, fold1)
+import Data.Foldable (foldl, foldr, foldMap, fold)
+import Data.Semigroup.Foldable (foldl1, foldr1, foldMap1, fold1)
 import Data.Maybe (Maybe(..))
 import Data.Enum (class BoundedEnum, upFromIncluding)
 import Data.Tuple.Nested ((/\), type (/\))
@@ -45,6 +47,12 @@ index t i
 refoldl :: forall a c. (c -> a -> c) -> c -> Trivial a -> c
 refoldl = foldl
 
+-- | `foldr` specialized to `Trivial`. "Re-fold" a polymorphic `Unfoldable`.
+-- | Usually preferable over the relatively "low-level" use of `turbofish`,
+-- | which is not re-exported from this module for that reason.
+refoldr :: forall a c. (a -> c -> c) -> c -> Trivial a -> c
+refoldr = foldr
+
 -- | `foldMap` specialized to `Trivial`. "Re-fold" a polymorphic `Unfoldable`.
 -- | Usually preferable over the relatively "low-level" use of `turbofish`,
 -- | which is not re-exported from this module for that reason.
@@ -62,6 +70,12 @@ refold = fold
 -- | which is not re-exported from this module for that reason.
 refoldl1 :: forall a. (a -> a -> a) -> Trivial1 a -> a
 refoldl1 = foldl1
+
+-- | `foldr1` specialized to `Trivial1`. "Re-fold" a polymorphic `Unfoldable1`.
+-- | Usually referable over the relatively "low-level" use of `turbofish1`,
+-- | which is not re-exported from this module for that reason.
+refoldr1 :: forall a. (a -> a -> a) -> Trivial1 a -> a
+refoldr1 = foldr1
 
 -- | `foldMap` specialized to `Trivial1`. "Re-fold" a polymorphic `Unfoldable1`.
 -- | Usually preferable over the relatively "low-level" use of `turbofish1`,
