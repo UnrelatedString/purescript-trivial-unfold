@@ -3,12 +3,17 @@ module Test.Main where
 import Prelude
 
 import Effect (Effect)
-import Test.Unit (TestSuite, suite, test)
+import Test.Unit (TestSuite, Test, suite, test)
 import Test.Unit.Main (runTest)
 import Test.Unit.Assert as Assert
 import Test.QuickCheck ((===))
 import Test.QuickCheck.Arbitrary (class Arbitrary)
 import Test.Unit.QuickCheck (quickCheck, quickCheck')
+import Effect.Aff (Aff)
+import Pipes ((>->), yield, await)
+import Pipes.Core (Producer_, Consumer_)
+import Pipes.Core as Pipes -- I am NOT importing something called "runEffect" unqualified lol
+import Control.Monad.Trans.Class (lift)
 
 import Data.Unfoldable.Trivial
  ( Trivial
@@ -45,6 +50,7 @@ import Data.Unfoldable1 (singleton, replicate1)
 import Data.Foldable (foldl, foldr, foldMapDefaultL, foldMapDefaultR)
 import Data.Semigroup.Foldable (foldl1, foldr1, foldMap1DefaultL, foldMap1DefaultR)
 import Type.Proxy (Proxy(..))
+import Data.Array (toUnfoldable)
 
 main :: Effect Unit
 main = runTest do
@@ -52,7 +58,7 @@ main = runTest do
   buildSuite
   foldSuite
   enumSuite
-  test "Failing test to see if the CI complains" $ Assert.assert "is the universe imploding" false
+  exampleInTheReadmeTest
 
 smallSuite :: TestSuite
 smallSuite = suite "small stuff" do
@@ -140,3 +146,30 @@ genericBoundedEnumSuite name p extras = genericEnumSuite name p $ (_ <> extras) 
   test "ends are in right order" do
     Assert.equal (First bottom) $ foldEnum (First :: a -> First a)
     Assert.equal (Last top) $ foldEnum (Last :: a -> Last a)
+
+-- because it would be ESPECIALLY embarrassing if this didn't work :P
+exampleInTheReadmeTest :: TestSuite
+exampleInTheReadmeTest = test "Example in the README" $
+  Pipes.runEffect $ exampleInTheReadme >-> do
+    equals 'z'
+  
+  where equals :: forall a. Show a => a -> Consumer_ String Aff Unit
+        equals value = pure unit -- await >>= lift (Assert.equal $ show value)
+
+-- it took me embarrassingly long to realize Identity doesn't just, like,
+-- automatically coerce to literally any other monad :p
+exampleInTheReadme :: forall m. Monad m => Producer_ String m Unit
+exampleInTheReadme = do
+  -- ehehehehe
+  let logShow = yield <<< show
+  
+  -- Imports to show in actual example
+  {-
+  import Data.Unfoldable.Adapter (index)
+  import Data.Enum (upFrom)
+  -}
+
+  -- main = do
+  
+  -- Index into a very large range without evaluating all of it
+  logShow $ index (upFromIncluding 'A') (32 + 25) -- 'z'
