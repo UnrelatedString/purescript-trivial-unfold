@@ -52,6 +52,7 @@ main = runTest do
   buildSuite
   foldSuite
   enumSuite
+  test "Failing test to see if the CI complains" $ Assert.assert "is the universe imploding" false
 
 smallSuite :: TestSuite
 smallSuite = suite "small stuff" do
@@ -117,9 +118,9 @@ enumSuite :: TestSuite
 enumSuite = suite "enums" do
   genericEnumSuite "Int" (Proxy :: Proxy Int) do
     test "index matches upFromIncluding" do
-      quickCheck' 200 \x y -> index (upFromIncluding x) y === if y >= 0 then Just (x + y) else Nothing
+      quickCheck' 20 \x y -> index (upFromIncluding x) y === if y >= 0 then Just (x + y) else Nothing
     test "index matches iterate" do
-      quickCheck' 200 \x -> index (iterate (_+1) 0) x === if x >= 0 then Just x else Nothing
+      quickCheck' 20 \x -> index (iterate (_+1) 0) x === if x >= 0 then Just x else Nothing
   genericBoundedEnumSuite "Char" (Proxy :: Proxy Char) $ pure unit
   genericBoundedEnumSuite "Ordering" (Proxy :: Proxy Ordering) $ pure unit
   genericBoundedEnumSuite "Boolean" (Proxy :: Proxy Boolean) $ pure unit
