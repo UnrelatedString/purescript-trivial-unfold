@@ -31,7 +31,7 @@ import Data.Tuple.Nested ((/\), type (/\))
 
 -- | Get the element at the specified 0-index, or `Nothing` if the index is out-of-bounds.
 -- |
--- | Time complexity: `O(n)` in the index assuming a constant-time generating function.
+-- | Time complexity: `O(n)` in the index (calls to the generating function).
 -- | (Does not terminate early if it goes past the end!)
 index :: forall a. Trivial a -> Int -> Maybe a
 index t i
@@ -58,7 +58,7 @@ refold :: forall a. Monoid a => Trivial a -> a
 refold = fold
 
 -- | `foldl1` specialized to `Trivial1`. "Re-fold" a polymorphic `Unfoldable1`.
--- | Usually referable over the relatively "low-level" use of `turbofish1`,
+-- | Usually preferable over the relatively "low-level" use of `turbofish1`,
 -- | which is not re-exported from this module for that reason.
 refoldl1 :: forall a. (a -> a -> a) -> Trivial1 a -> a
 refoldl1 = foldl1
