@@ -35,6 +35,7 @@ import Data.Unfoldable.Trivial.Adapter
  , iterate
  , cons
  , snoc
+ , refold1
 )
 
 import Data.Maybe (Maybe(..), isJust, isNothing)
@@ -46,11 +47,12 @@ import Data.Monoid (guard)
 import Data.Semigroup.First (First(..))
 import Data.Semigroup.Last (Last(..))
 import Data.Unfoldable (none, fromMaybe, replicate)
-import Data.Unfoldable1 (singleton, replicate1)
-import Data.Foldable (foldl, foldr, foldMapDefaultL, foldMapDefaultR)
+import Data.Unfoldable1 (singleton, replicate1, unfoldr1)
+import Data.Foldable (foldl, foldr, foldMapDefaultL, foldMapDefaultR, intercalate)
 import Data.Semigroup.Foldable (foldl1, foldr1, foldMap1DefaultL, foldMap1DefaultR)
 import Type.Proxy (Proxy(..))
 import Data.Array (toUnfoldable)
+import Data.Monoid.Multiplicative (Multiplicative(..))
 
 main :: Effect Unit
 main = runTest do
@@ -151,12 +153,13 @@ genericBoundedEnumSuite name p extras = genericEnumSuite name p $ (_ <> extras) 
 exampleInTheReadmeTest :: TestSuite
 exampleInTheReadmeTest = test "Example in the README" $
   Pipes.runEffect $ exampleInTheReadme >-> do
-    equals 'z'
-  
+    equals $ Just 'z'
+    equals   "Gonna Give You Up"
+    equals   720
   where equals :: forall a. Show a => a -> Consumer_ String Aff Unit
         equals value = await >>= lift <<< Assert.equal (show value)
 
--- it took me embarrassingly long to realize Identity doesn't just, like,
+-- it took me embarrassingly long to fully realize Identity doesn't just, like,
 -- automatically coerce to literally any other monad :p
 exampleInTheReadme :: forall m. Monad m => Producer_ String m Unit
 exampleInTheReadme = do
@@ -165,11 +168,33 @@ exampleInTheReadme = do
   
   -- Imports to show in actual example
   {-
-  import Data.Unfoldable.Adapter (index)
+  import Effect.Console (logShow)
   import Data.Enum (upFrom)
+  import Data.Maybe (Maybe(..))
+  import Data.Array (toUnfoldable)
+  import Data.Foldable (intercalate)
+  import Data.Unfoldable (unfoldr1)
+  import Data.Multiplicative (Multiplicative(..))
+
+  import Data.Unfoldable.Trivial.Adapter (index, tail, refold1)
+  import Data.Unfoldable.Trivial ((::<*>)) -- ...okay maybe I should put this in Adapter
   -}
 
   -- main = do
   
-  -- Index into a very large range without evaluating all of it
-  logShow $ index (upFromIncluding 'A') (32 + 25) -- 'z'
+  -- Index into a very large range without evaluating all of it.
+  logShow $ index (upFromIncluding 'A') (32 + 25)
+  -- > Just 'z'
+
+  -- Fold over a suffix of an Array without constructing a new Array for the suffix.
+  -- The (::<*>) operator is ($) specialized to Trivial,
+  -- to conveniently make instances decidable.
+  logShow $ intercalate " " ::<*> tail $ toUnfoldable [
+    "Never", "Gonna", "Give", "You", "Up"
+  ]
+  -- > "Gonna Give You Up"
+
+  -- Fold directly from a generating function.
+  -- Basic folds are also provided specialized, with the "re-" prefix.
+  logShow $ refold1 $ flip unfoldr1 1 \n -> if n <= 6 then Just Multiplicative n else Nothing
+  -- > 620

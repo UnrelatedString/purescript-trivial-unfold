@@ -17,7 +17,7 @@ module Data.Unfoldable.Trivial.Adapter
 
 import Prelude
 
-import Data.Unfoldable.Trivial (Trivial, head, tail, cons)
+import Data.Unfoldable.Trivial (Trivial, head, tail, cons) -- TODO: add take and drop for a more motivated example LMAO
 import Data.Unfoldable1.Trivial1 (Trivial1, (::<+>))
 import Data.Unfoldable.Trivial (head, tail, unfoldr1Default, cons, snoc) as Reexports
 import Data.Unfoldable1.Trivial1 (head1, tail1) as Reexports
