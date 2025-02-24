@@ -1,0 +1,25 @@
+name: CI
+on: [push, pull_request, workflow_dispatch]
+
+jobs:
+  # This workflow contains a single job called "test"
+  test:
+    # why is UBUNTU the only distro they have a runner for 💀💀💀
+    runs-on: ubuntu-latest
+    
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it. also in Mati's so I will blindly trust it
+      - uses: actions/checkout@v4
+
+      # Runs a set of commands using the runners shell
+      - name: Set up Purescript and Spago
+        run: |
+          npm i -g purescript
+          npm i -g spago@next
+
+      # Runs a single command
+      - name: Build
+        run: spago build
+
+      - name: Test
+        run: spago test

@@ -17,15 +17,15 @@ package:
     dependencies:
       - control
       - test-unit
+      - aff
+      - pipes
   build:
     pedanticPackages: true
   publish:
     version: 0.1.1
     license: BSD-3-Clause
     location:
-      # TODO: migrate to somewhere COOLER
-      githubOwner: UnrelatedString
-      githubRepo: purescript-trivial-unfold
+      gitUrl: https://git.gay/string/purescript-trivial-unfold.git
 workspace:
   packageSet:
     registry: 63.2.1

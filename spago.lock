@@ -84,7 +84,9 @@
         },
         "test": {
           "dependencies": [
+            "aff",
             "control",
+            "pipes",
             "test-unit"
           ],
           "build_plan": [
@@ -117,6 +119,7 @@
             "lcg",
             "lists",
             "maybe",
+            "mmorph",
             "newtype",
             "nonempty",
             "numbers",
@@ -124,6 +127,7 @@
             "orders",
             "parallel",
             "partial",
+            "pipes",
             "prelude",
             "profunctor",
             "quickcheck",
@@ -1063,6 +1067,16 @@
         "prelude"
       ]
     },
+    "mmorph": {
+      "type": "registry",
+      "version": "7.0.0",
+      "integrity": "sha256-urZlZNNqGeQFe5D/ClHlR8QgGBNHTMFPtJ5S5IpflTQ=",
+      "dependencies": [
+        "free",
+        "functors",
+        "transformers"
+      ]
+    },
     "newtype": {
       "type": "registry",
       "version": "5.0.0",
@@ -1144,6 +1158,20 @@
       "version": "4.0.0",
       "integrity": "sha256-fwXerld6Xw1VkReh8yeQsdtLVrjfGiVuC5bA1Wyo/J4=",
       "dependencies": []
+    },
+    "pipes": {
+      "type": "registry",
+      "version": "8.0.0",
+      "integrity": "sha256-kvfqGM4cPA/wCcBHbp5psouFw5dZGvku2462x7ZBwSY=",
+      "dependencies": [
+        "aff",
+        "lists",
+        "mmorph",
+        "prelude",
+        "tailrec",
+        "transformers",
+        "tuples"
+      ]
     },
     "prelude": {
       "type": "registry",
