@@ -3,7 +3,7 @@ module Test.Main where
 import Prelude
 
 import Effect (Effect)
-import Test.Unit (TestSuite, Test, suite, test)
+import Test.Unit (TestSuite, suite, test)
 import Test.Unit.Main (runTest)
 import Test.Unit.Assert as Assert
 import Test.QuickCheck ((===))
@@ -39,11 +39,10 @@ import Data.Unfoldable.Trivial.Adapter
 )
 
 import Data.Maybe (Maybe(..), isJust, isNothing)
-import Control.Alternative ((<|>))
+import Control.Alternative ((<|>), guard)
 import Data.Enum (class Enum, class BoundedEnum, succ, pred, upFrom, downFrom, upFromIncluding)
 import Data.Tuple (snd)
 import Data.Tuple.Nested ((/\), type (/\))
-import Data.Monoid (guard)
 import Data.Semigroup.First (First(..))
 import Data.Semigroup.Last (Last(..))
 import Data.Unfoldable (none, fromMaybe, replicate)
@@ -53,6 +52,9 @@ import Data.Semigroup.Foldable (foldl1, foldr1, foldMap1DefaultL, foldMap1Defaul
 import Type.Proxy (Proxy(..))
 import Data.Array (toUnfoldable)
 import Data.Monoid.Multiplicative (Multiplicative(..))
+
+iff :: forall a. Boolean -> a -> Maybe a
+iff = ($>) <<< guard
 
 main :: Effect Unit
 main = runTest do
@@ -71,7 +73,7 @@ smallSuite = suite "small stuff" do
     quickCheck \(x :: Int) -> head (singleton x) === Just x
     quickCheck \(x :: Int) -> head1 (singleton x) === x
     quickCheck \(x :: Maybe String) -> head (fromMaybe x) === x
-    quickCheck \x -> head (replicate x "ehehe") === guard (x > 0) (Just "ehehe")
+    quickCheck \x -> head (replicate x "ehehe") === iff (x > 0) "ehehe"
     quickCheck \x (y :: Int) -> head (replicate1 x y) === Just y
   test "double uncons" do
     let double :: forall a. Trivial a -> Maybe (a /\ Maybe a)
@@ -126,9 +128,9 @@ enumSuite :: TestSuite
 enumSuite = suite "enums" do
   genericEnumSuite "Int" (Proxy :: Proxy Int) do
     test "index matches upFromIncluding" do
-      quickCheck' 20 \x y -> index (upFromIncluding x) y === if y >= 0 then Just (x + y) else Nothing
+      quickCheck' 20 \x y -> index (upFromIncluding x) y === iff (y >= 0) (x + y)
     test "index matches iterate" do
-      quickCheck' 20 \x -> index (iterate (_+1) 0) x === if x >= 0 then Just x else Nothing
+      quickCheck' 20 \x -> index (iterate (_+1) 0) x === iff (x >= 0) x
   genericBoundedEnumSuite "Char" (Proxy :: Proxy Char) $ pure unit
   genericBoundedEnumSuite "Ordering" (Proxy :: Proxy Ordering) $ pure unit
   genericBoundedEnumSuite "Boolean" (Proxy :: Proxy Boolean) $ pure unit
@@ -155,7 +157,7 @@ exampleInTheReadmeTest = test "Example in the README" $
   Pipes.runEffect $ exampleInTheReadme >-> do
     equals $ Just 'z'
     equals   "Gonna Give You Up"
-    equals   720
+    equals $ Multiplicative 720
   where equals :: forall a. Show a => a -> Consumer_ String Aff Unit
         equals value = await >>= lift <<< Assert.equal (show value)
 
@@ -164,7 +166,8 @@ exampleInTheReadmeTest = test "Example in the README" $
 exampleInTheReadme :: forall m. Monad m => Producer_ String m Unit
 exampleInTheReadme = do
   -- ehehehehe
-  let logShow = yield <<< show
+  let logShow :: forall a. Show a => a -> _
+      logShow = yield <<< show
   
   -- Imports to show in actual example
   {-
@@ -173,6 +176,7 @@ exampleInTheReadme = do
   import Data.Maybe (Maybe(..))
   import Data.Array (toUnfoldable)
   import Data.Foldable (intercalate)
+  import Data.Monoid (guard)
   import Data.Unfoldable (unfoldr1)
   import Data.Multiplicative (Multiplicative(..))
 
@@ -183,7 +187,7 @@ exampleInTheReadme = do
   -- main = do
   
   -- Index into a very large range without evaluating all of it.
-  logShow $ index (upFromIncluding 'A') (32 + 25)
+  logShow $ index (upFromIncluding 'A') $ 32 + 25
   -- > Just 'z'
 
   -- Fold over a suffix of an Array without constructing a new Array for the suffix.
@@ -196,5 +200,5 @@ exampleInTheReadme = do
 
   -- Fold directly from a generating function.
   -- Basic folds are also provided specialized, with the "re-" prefix.
-  logShow $ refold1 $ flip unfoldr1 1 \n -> if n <= 6 then Just Multiplicative n else Nothing
-  -- > 620
+  logShow $ refold1 $ flip unfoldr1 1 \n -> Multiplicative n /\ (guard (n < 6) $> n + 1)
+  -- > Multiplicative 620
