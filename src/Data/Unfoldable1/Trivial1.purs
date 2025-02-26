@@ -1,6 +1,3 @@
-<<<<<<< HEAD:src/Data/Unfoldable/Trivial.purs
-PLEASEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
-=======
 -- | This module provides various adapters and other such utilities
 -- | for `Unfoldable1`.
 
@@ -82,4 +79,3 @@ unfoldrInf = unfoldr1 <<< (map Just <<< _)
 -- | types with truncating `Unfoldable1` instances (like `Maybe`).
 iterate :: forall a u. Unfoldable1 u => (a -> a) -> a -> u a
 iterate f seed = cons seed $ unfoldrInf (\a -> f a /\ f a) seed
->>>>>>> trivial1split:src/Data/Unfoldable1/Trivial1.purs
