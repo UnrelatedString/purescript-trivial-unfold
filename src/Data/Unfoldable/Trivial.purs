@@ -3,6 +3,11 @@
 
 module Data.Unfoldable.Trivial.Adapter
  ( module Reexports
+ , head
+ , tail
+ , take
+ , cons
+ , snoc
  , index
  , drop
  , refoldl
@@ -12,12 +17,7 @@ module Data.Unfoldable.Trivial.Adapter
  ) where
 
 import Data.Unfoldable.Trivial.Internal
-  ( head
-  , tail
-  , take
-  , unfoldr1Default
-  , cons
-  , snoc
+  ( unfoldr1Default
   , turbofish
   , (::<*>)
   ) as Reexports
@@ -25,7 +25,7 @@ import Data.Unfoldable1.Trivial1 as Reexports
 
 import Prelude
 
-import Data.Unfoldable.Trivial.Internal (Trivial, head, tail, cons) -- TODO: add take and drop for a more motivated example LMAO
+import Data.Unfoldable.Trivial.Internal (Trivial, head, tail, cons)
 import Data.Unfoldable1.Trivial1.Internal (Trivial1, (::<+>))
 
 import Data.Unfoldable1 (class Unfoldable1, unfoldr1)

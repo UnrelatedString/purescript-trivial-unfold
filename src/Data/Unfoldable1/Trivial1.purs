@@ -3,15 +3,9 @@
 
 module Data.Unfoldable.Trivial1
  ( module Reexports
- , index
- , drop
- , refoldl
  , refoldl1
- , refoldr
  , refoldr1
- , refoldMap
  , refoldMap1
- , refold
  , refold1
  , foldEnum
  , unfoldrInf
@@ -26,10 +20,7 @@ module Data.Unfoldable.Trivial1
  ) where
 
 import Data.Unfoldable1.Trivial1.Internal
-  (head1
-  , tail1
-  , take1
-  , turbofish1
+  ( turbofish1
   , (::<+>)) as Reexports
 
 import Prelude
