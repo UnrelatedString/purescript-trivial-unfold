@@ -1,6 +1,6 @@
 -- | This module provides various adapters and other such utilities
 -- | for `Unfoldable1`.
-
+>:3
 module Data.Unfoldable1.Trivial1
  ( module Reexports
  , refoldl1
