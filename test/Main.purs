@@ -15,7 +15,7 @@ import Pipes.Core (Producer_, Consumer_)
 import Pipes.Core as Pipes -- I am NOT importing something called "runEffect" unqualified lol
 import Control.Monad.Trans.Class (lift)
 
-import Data.Unfoldable.Trivial
+import Data.Unfoldable.Trivial.Internal
  ( Trivial
  , trivial
  , uncons
@@ -23,9 +23,9 @@ import Data.Unfoldable.Trivial
  , (::<*>)
 )
 
-import Data.Unfoldable1.Trivial1 (Trivial1, runTrivial1, (::<+>))
+import Data.Unfoldable1.Trivial1.Internal (Trivial1, runTrivial1, (::<+>))
 
-import Data.Unfoldable.Trivial.Adapter
+import Data.Unfoldable.Trivial
  ( head1
  , head
  , tail1
@@ -36,7 +36,7 @@ import Data.Unfoldable.Trivial.Adapter
  , cons
  , snoc
  , refold1
- , drop
+ --, drop
 )
 
 import Data.Maybe (Maybe(..), isJust, isNothing)
@@ -157,7 +157,7 @@ exampleInTheReadmeTest :: TestSuite
 exampleInTheReadmeTest = test "Example in the README" $
   Pipes.runEffect $ exampleInTheReadme >-> do
     equals $ Just 'z'
-    equals   "gonna give you up"
+    equals   "never gonna give you up"
     equals $ Multiplicative 720
   where equals :: forall a. Show a => a -> Consumer_ String Aff Unit
         equals value = await >>= lift <<< Assert.equal (show value)
@@ -181,7 +181,7 @@ exampleInTheReadme = do
   import Data.Unfoldable (unfoldr1)
   import Data.Multiplicative (Multiplicative(..))
 
-  import Data.Unfoldable.Trivial.Adapter ((::<*>), index, tail, refold1)
+  import Data.Unfoldable.Trivial ((::<*>), index, tail, refold1)
   -}
 
   -- main = do
@@ -194,7 +194,7 @@ exampleInTheReadme = do
   -- The (::<*>) operator is ($) specialized to Trivial,
   -- to conveniently make instances decidable.
   -- (Note that this can also be accomplished with Data.List.Lazy.)
-  logShow $ intercalate " " ::<*> drop 2 $ toUnfoldable [
+  logShow $ intercalate " " ::<*> tail $ toUnfoldable [
     "I'm", "never", "gonna", "give", "you", "up"
   ]
   -- > "gonna give you up"

@@ -8,7 +8,7 @@
 -- | The public API of this module may change dramatically in the next major version, or
 -- | even sooner within unstable 0.x.x versions.
 
-module Data.Unfoldable.Trivial
+module Data.Unfoldable.Trivial.Internal
  ( Trivial(..)
  , UnfoldrCall(..)
  , trivial
@@ -19,7 +19,6 @@ module Data.Unfoldable.Trivial
  , uncons
  , head
  , tail
- , take
  , runTrivial
  , cons
  , snoc

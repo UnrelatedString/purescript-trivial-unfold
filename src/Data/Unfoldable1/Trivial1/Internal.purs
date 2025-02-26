@@ -8,17 +8,17 @@
 -- | The public API of this module may change dramatically in the next major version, or
 -- | even sooner within unstable 0.x.x versions.
 
-module Data.Unfoldable1.Trivial1
+module Data.Unfoldable1.Trivial1.Internal
  ( Trivial1(..)
  , Unfoldr1Call(..)
- , untrivial
+ , untrivial1
  , trivial1
  , turbofish1
  , (::<+>)
  , uncons1
  , head1
  , tail1
- , take1
+ --, take1
  , runTrivial1
  ) where
 
@@ -37,7 +37,7 @@ import Data.Bifunctor (lmap)
 import Test.QuickCheck.Arbitrary (class Arbitrary, class Coarbitrary, arbitrary)
 import Test.QuickCheck.Gen (sized)
 
-import Data.Unfoldable.Trivial ((::<*>))
+import Data.Unfoldable.Trivial.Internal ((::<*>))
 
 -- | A constructor taking the same arguments as `unfoldr1`.
 -- |
@@ -100,9 +100,6 @@ head1 = untrivial1 eHead1
 -- | Removes the first element.
 tail1 :: forall a u. Unfoldable u => Trivial1 a -> u a
 tail1 = snd <<< uncons1
-
--- | Keep only a strictly positive number of elements from the start.
-take1 :: forall a u. Unfoldable1 u => Int -> Trivial1 a -> u a
 
 -- | Converts to any other `Unfoldable1`.
 -- | Can also be seen as evaluating the inner `Unfoldr1Call`.

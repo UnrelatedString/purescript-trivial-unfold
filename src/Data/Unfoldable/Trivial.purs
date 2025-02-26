@@ -1,15 +1,15 @@
 -- | This "module" provides various adapters and other such utilities
 -- | for `Unfoldable1` and `Unfoldable`.
 
-module Data.Unfoldable.Trivial.Adapter
+module Data.Unfoldable.Trivial
  ( module Reexports
- , head
- , tail
- , take
- , cons
- , snoc
+--  , head
+--  , tail
+-- , take
+--  , cons
+--  , snoc
  , index
- , drop
+-- , drop
  , refoldl
  , refoldr
  , refoldMap
@@ -18,6 +18,11 @@ module Data.Unfoldable.Trivial.Adapter
 
 import Data.Unfoldable.Trivial.Internal
   ( unfoldr1Default
+  , head
+  , tail
+  , cons
+  , snoc
+  , trivial
   , turbofish
   , (::<*>)
   ) as Reexports
@@ -45,11 +50,11 @@ index t i
   | i == 0 = head t
   | otherwise = index (tail t) (i - 1)
 
--- | Keep only a number of elements from the start.
-take :: forall a u. Unfoldable u => Int -> Trivial a -> u a
+-- -- | Keep only a number of elements from the start.
+-- take :: forall a u. Unfoldable u => Int -> Trivial a -> u a
 
--- | Drop a number of elements from the start.
-drop :: forall a u. Unfoldable u => Int -> Trivial a -> u a
+-- -- | Drop a number of elements from the start.
+-- drop :: forall a u. Unfoldable u => Int -> Trivial a -> u a
 
 -- | `foldl` specialized to `Trivial`. "Re-fold" a polymorphic `Unfoldable`.
 -- | Usually cleaner and more convenient than `turbofish`, when applicable.

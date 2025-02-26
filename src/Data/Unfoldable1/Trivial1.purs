@@ -1,7 +1,7 @@
 -- | This module provides various adapters and other such utilities
 -- | for `Unfoldable1`.
 
-module Data.Unfoldable.Trivial1
+module Data.Unfoldable1.Trivial1
  ( module Reexports
  , refoldl1
  , refoldr1
@@ -10,20 +10,27 @@ module Data.Unfoldable.Trivial1
  , foldEnum
  , unfoldrInf
  , iterate
- , trivial1
- , turbofish1
- , (::<+>)
- , uncons1
- , head1
- , tail1
- , take1
+--  , head1
+--  , tail1
+--  , take1
  ) where
 
 import Data.Unfoldable1.Trivial1.Internal
-  ( turbofish1
+  ( Trivial1
+  , trivial1
+  , turbofish1
+  , head1
+  , tail1
   , (::<+>)) as Reexports
 
 import Prelude
+
+import Data.Unfoldable1.Trivial1.Internal
+ ( Trivial1
+ , (::<+>)
+ )
+
+import Data.Unfoldable.Trivial.Internal (Trivial, cons)
 
 import Data.Foldable (foldl)
 import Data.Semigroup.Foldable (class Foldable1)
@@ -36,6 +43,8 @@ import Data.Tuple.Nested ((/\), type (/\))
 import Data.Maybe (Maybe(..), maybe)
 import Data.Bifunctor (lmap)
 
+-- -- | Keep only a strictly positive number of elements from the start.
+-- take1 :: forall a u. Unfoldable1 u => Int -> Trivial1 a -> u a
 
 -- | `foldl1` specialized to `Trivial1`. "Re-fold" a polymorphic `Unfoldable1`.
 -- | Usually cleaner and more convenient than `turbofish`, when applicable.
