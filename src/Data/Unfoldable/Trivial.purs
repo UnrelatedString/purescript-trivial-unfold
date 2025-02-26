@@ -1,17 +1,25 @@
 -- | This module provides the `Trivial` type as an existentially quantified
 -- | dumb wrapper around `unfold`, which can be inspected and manipulated
 -- | to implement various typeclasses and the utilities in Data.Unfoldable.Trivial.Adapter.
+-- | 
+-- | This module also contains the implementations of utilities which rely on directly
+-- | inspecting `Trivial` values and are re-exported by Data.Unfoldable.Trivial.Adapter.
+-- | Use this module directly only if you intend to directly inspect `Trivial` values yourself.
+-- | The public API of this module may change dramatically in the next major version, or
+-- | even sooner within unstable 0.x.x versions.
 
 module Data.Unfoldable.Trivial
  ( Trivial(..)
  , UnfoldrCall(..)
  , trivial
+ , untrivial
  , turbofish
  , (::<*>)
  , unfoldr1Default
  , uncons
  , head
  , tail
+ , take
  , runTrivial
  , cons
  , snoc
@@ -31,9 +39,15 @@ import Test.QuickCheck.Arbitrary (class Arbitrary, class Coarbitrary, arbitrary)
 import Test.QuickCheck.Gen (sized)
 
 -- | A constructor taking the same arguments as `unfoldr`.
+-- |
+-- | Although this is part of the public API, you almost certainly do not want to use it
+-- | directly, and it may be removed from the public API in the near future.
+-- | Use `untrivial` if none of the existing utilities match your use case.
 data UnfoldrCall a b = UnfoldrCall (b -> Maybe (a /\ b)) b
 
 -- | A newtype wrapping `UnfoldrCall a b`, existentially quantified over the "seed" type `b`.
+-- | Not meant to specifically be constructed directly--its `Unfoldable` instance
+-- | is meant to be used to "intercept" `unfoldr` calls in other functions.
 newtype Trivial a = Trivial (Exists (UnfoldrCall a))
 derive instance Newtype (Trivial a) _
 
@@ -51,7 +65,8 @@ turbofish = identity
 
 infixr 0 turbofish as ::<*>
 
--- | Internal helper for implementing functions on Trivial.
+-- | Convenience function for inspecting `Trivial` values.
+-- | Calls the function argument on the inner `UnfoldrCall`.
 untrivial :: forall a c. (forall b. UnfoldrCall a b -> c) -> Trivial a -> c
 untrivial f = runExists f <<< unwrap
 
@@ -99,6 +114,9 @@ tail = maybe none snd <<< uncons
 
 -- | Converts to any other `Unfoldable`.
 -- | Can also be seen as evaluating the inner `UnfoldrCall`.
+-- | 
+-- | This is only useful in implementing utility functions.
+-- | In all other cases, simply use the desired type directly.
 runTrivial :: forall a u. Unfoldable u => Trivial a -> u a
 runTrivial = untrivial eRunTrivial
   where eRunTrivial :: forall b. UnfoldrCall a b -> u a
