@@ -16,6 +16,13 @@ module Data.Unfoldable.Trivial1
  , foldEnum
  , unfoldrInf
  , iterate
+ , trivial1
+ , turbofish1
+ , (::<+>)
+ , uncons1
+ , head1
+ , tail1
+ , take1
  ) where
 
 import Data.Unfoldable1.Trivial1.Internal
@@ -27,15 +34,16 @@ import Data.Unfoldable1.Trivial1.Internal
 
 import Prelude
 
-import Data.Unfoldable.Trivial (Trivial, head, tail, cons) -- TODO: add take and drop for a more motivated example LMAO
-import Data.Unfoldable1.Trivial1 (Trivial1, (::<+>))
-
+import Data.Foldable (foldl)
+import Data.Semigroup.Foldable (class Foldable1)
 import Data.Unfoldable1 (class Unfoldable1, unfoldr1)
 import Data.Foldable (foldl, foldr, foldMap, fold)
 import Data.Semigroup.Foldable (foldl1, foldr1, foldMap1, fold1)
 import Data.Maybe (Maybe(..))
 import Data.Enum (class BoundedEnum, upFromIncluding)
 import Data.Tuple.Nested ((/\), type (/\))
+import Data.Maybe (Maybe(..), maybe)
+import Data.Bifunctor (lmap)
 
 
 -- | `foldl1` specialized to `Trivial1`. "Re-fold" a polymorphic `Unfoldable1`.
