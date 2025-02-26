@@ -4,8 +4,11 @@
 module Data.Unfoldable.Trivial.Adapter
  ( module Reexports
  , index
+ , drop
  , refoldl
  , refoldl1
+ , refoldr
+ , refoldr1
  , refoldMap
  , refoldMap1
  , refold
@@ -15,16 +18,31 @@ module Data.Unfoldable.Trivial.Adapter
  , iterate
  ) where
 
+import Data.Unfoldable.Trivial
+  ( head
+  , tail
+  , take
+  , unfoldr1Default
+  , cons
+  , snoc
+  , turbofish
+  , (::<*>)
+  ) as Reexports
+import Data.Unfoldable1.Trivial1
+  (head1
+  , tail1
+  , take1
+  , turbofish1
+  , (::<+>)) as Reexports
+
 import Prelude
 
 import Data.Unfoldable.Trivial (Trivial, head, tail, cons) -- TODO: add take and drop for a more motivated example LMAO
 import Data.Unfoldable1.Trivial1 (Trivial1, (::<+>))
-import Data.Unfoldable.Trivial (head, tail, unfoldr1Default, cons, snoc) as Reexports
-import Data.Unfoldable1.Trivial1 (head1, tail1) as Reexports
 
 import Data.Unfoldable1 (class Unfoldable1, unfoldr1)
-import Data.Foldable (foldl, foldMap, fold)
-import Data.Semigroup.Foldable (foldl1, foldMap1, fold1)
+import Data.Foldable (foldl, foldr, foldMap, fold)
+import Data.Semigroup.Foldable (foldl1, foldr1, foldMap1, fold1)
 import Data.Maybe (Maybe(..))
 import Data.Enum (class BoundedEnum, upFromIncluding)
 import Data.Tuple.Nested ((/\), type (/\))
@@ -39,39 +57,49 @@ index t i
   | i == 0 = head t
   | otherwise = index (tail t) (i - 1)
 
+-- | Keep only a number of elements from the start.
+take :: forall a u. Unfoldable u => Int -> Trivial a -> u a
+
+-- | Drop a number of elements from the start.
+drop :: forall a u. Unfoldable u => Int -> Trivial a -> u a
+
 -- | `foldl` specialized to `Trivial`. "Re-fold" a polymorphic `Unfoldable`.
--- | Usually preferable over the relatively "low-level" use of `turbofish`,
--- | which is not re-exported from this module for that reason.
+-- | Usually cleaner and more convenient than `turbofish`, when applicable.
 refoldl :: forall a c. (c -> a -> c) -> c -> Trivial a -> c
 refoldl = foldl
 
+-- | `foldr` specialized to `Trivial`. "Re-fold" a polymorphic `Unfoldable`.
+-- | Usually cleaner and more convenient than `turbofish`, when applicable.
+refoldr :: forall a c. (a -> c -> c) -> c -> Trivial a -> c
+refoldr = foldr
+
 -- | `foldMap` specialized to `Trivial`. "Re-fold" a polymorphic `Unfoldable`.
--- | Usually preferable over the relatively "low-level" use of `turbofish`,
--- | which is not re-exported from this module for that reason.
+-- | Usually cleaner and more convenient than `turbofish`, when applicable.
 refoldMap :: forall a c. Monoid c => (a -> c) -> Trivial a -> c
 refoldMap = foldMap
 
 -- | `fold` specialized to `Trivial`. "Re-fold" a polymorphic `Unfoldable`.
--- | Usually preferable over the relatively "low-level" use of `turbofish`,
--- | which is not re-exported from this module for that reason.
+-- | Usually cleaner and more convenient than `turbofish`, when applicable.
 refold :: forall a. Monoid a => Trivial a -> a
 refold = fold
 
 -- | `foldl1` specialized to `Trivial1`. "Re-fold" a polymorphic `Unfoldable1`.
--- | Usually preferable over the relatively "low-level" use of `turbofish1`,
--- | which is not re-exported from this module for that reason.
+-- | Usually cleaner and more convenient than `turbofish`, when applicable.
 refoldl1 :: forall a. (a -> a -> a) -> Trivial1 a -> a
 refoldl1 = foldl1
 
+-- | `foldr1` specialized to `Trivial1`. "Re-fold" a polymorphic `Unfoldable1`.
+-- | Usually cleaner and more convenient than `turbofish`, when applicable.
+refoldr1 :: forall a. (a -> a -> a) -> Trivial1 a -> a
+refoldr1 = foldr1
+
 -- | `foldMap` specialized to `Trivial1`. "Re-fold" a polymorphic `Unfoldable1`.
--- | Usually preferable over the relatively "low-level" use of `turbofish1`,
--- | which is not re-exported from this module for that reason.
+-- | Usually cleaner and more convenient than `turbofish1`, when applicable.
 refoldMap1 :: forall a c. Semigroup c => (a -> c) -> Trivial1 a -> c
 refoldMap1 = foldMap1
 
 -- | `fold` specialized to `Trivial1`. "Re-fold" a polymorphic `Unfoldable1`.
--- | Usually preferable over the relatively "low-level" use of `turbofish1`,
--- | which is not re-exported from this module for that reason.
+-- | Usually cleaner and more convenient than `turbofish1`, when applicable.
 refold1 :: forall a. Semigroup a => Trivial1 a -> a
 refold1 = fold1
 

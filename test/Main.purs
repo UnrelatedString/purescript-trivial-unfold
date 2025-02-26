@@ -36,6 +36,7 @@ import Data.Unfoldable.Trivial.Adapter
  , cons
  , snoc
  , refold1
+ , drop
 )
 
 import Data.Maybe (Maybe(..), isJust, isNothing)
@@ -156,7 +157,7 @@ exampleInTheReadmeTest :: TestSuite
 exampleInTheReadmeTest = test "Example in the README" $
   Pipes.runEffect $ exampleInTheReadme >-> do
     equals $ Just 'z'
-    equals   "Gonna Give You Up"
+    equals   "gonna give you up"
     equals $ Multiplicative 720
   where equals :: forall a. Show a => a -> Consumer_ String Aff Unit
         equals value = await >>= lift <<< Assert.equal (show value)
@@ -180,8 +181,7 @@ exampleInTheReadme = do
   import Data.Unfoldable (unfoldr1)
   import Data.Multiplicative (Multiplicative(..))
 
-  import Data.Unfoldable.Trivial.Adapter (index, tail, refold1)
-  import Data.Unfoldable.Trivial ((::<*>)) -- ...okay maybe I should put this in Adapter
+  import Data.Unfoldable.Trivial.Adapter ((::<*>), index, tail, refold1)
   -}
 
   -- main = do
@@ -193,10 +193,11 @@ exampleInTheReadme = do
   -- Fold over a suffix of an Array without constructing a new Array for the suffix.
   -- The (::<*>) operator is ($) specialized to Trivial,
   -- to conveniently make instances decidable.
-  logShow $ intercalate " " ::<*> tail $ toUnfoldable [
-    "Never", "Gonna", "Give", "You", "Up"
+  -- (Note that this can also be accomplished with Data.List.Lazy.)
+  logShow $ intercalate " " ::<*> drop 2 $ toUnfoldable [
+    "I'm", "never", "gonna", "give", "you", "up"
   ]
-  -- > "Gonna Give You Up"
+  -- > "gonna give you up"
 
   -- Fold directly from a generating function.
   -- Basic folds are also provided specialized, with the "re-" prefix.
