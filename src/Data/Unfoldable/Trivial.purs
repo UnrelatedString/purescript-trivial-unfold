@@ -9,10 +9,7 @@
 -- | even sooner within unstable 0.x.x versions.
 
 module Data.Unfoldable.Trivial
- ( Trivial(..)
- , UnfoldrCall(..)
- , trivial
- , untrivial
+ ( trivial
  , turbofish
  , (::<*>)
  , unfoldr1Default
@@ -20,20 +17,16 @@ module Data.Unfoldable.Trivial
  , head
  , tail
  , take
- , runTrivial
  , cons
  , snoc
  ) where
 
 import Prelude
 
-import Data.Foldable (class Foldable, foldrDefault, foldMapDefaultL)
 import Data.Unfoldable (class Unfoldable, class Unfoldable1, unfoldr, unfoldr1, none)
 import Data.Tuple (snd, uncurry)
 import Data.Tuple.Nested ((/\), type (/\))
 import Data.Maybe (Maybe(..), maybe)
-import Data.Exists (Exists, mkExists, runExists)
-import Data.Newtype (class Newtype, unwrap)
 import Data.Bifunctor (lmap)
 import Test.QuickCheck.Arbitrary (class Arbitrary, class Coarbitrary, arbitrary)
 import Test.QuickCheck.Gen (sized)
