@@ -99,7 +99,7 @@ smallSuite = suite "small stuff" do
   test "take agrees with index" do
     quickCheck \(x :: Trivial Char) n -> refoldMap (Just <<< Last) (take n x) === Last <$> index x ((min n $ length x) - 1)
   test "drop agrees with index" do
-    quickCheck \(x :: Trivial Char) n -> drop n x === index x n
+    quickCheck \(x :: Trivial Char) n -> drop n x === index x (max n 0)
   -- test "take1 agrees with index1" do
   --   quickCheck \(x :: Trivial Char) n -> foldMap Last 
 

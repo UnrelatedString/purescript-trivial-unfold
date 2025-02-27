@@ -94,6 +94,7 @@ take n = untrivial eTake
 
 -- | Drop a number of elements from the start.
 -- Surprised the old version didn't tail call optimize but this is smarter/lazier anyways
+-- TODO: nicer kinda-maybe-lazier-feeling impl with compact when I add that
 drop :: forall a u. Unfoldable u => Int -> Trivial a -> u a
 drop n = untrivial eDrop 
   where eDrop :: forall b. Generator a b -> b -> u a
