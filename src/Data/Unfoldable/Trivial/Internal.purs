@@ -10,6 +10,7 @@
 
 module Data.Unfoldable.Trivial.Internal
  ( Trivial(..)
+ , Generator
  , UnfoldrCall(..)
  , trivial
  , untrivial
@@ -32,12 +33,15 @@ import Data.Bifunctor (lmap)
 import Test.QuickCheck.Arbitrary (class Arbitrary, class Coarbitrary, arbitrary)
 import Test.QuickCheck.Gen (sized)
 
+-- | Alias for the generator function passed to `unfoldr`.
+type Generator a b = b -> Maybe (a /\ b)
+
 -- | A constructor taking the same arguments as `unfoldr`.
 -- |
 -- | Although this is part of the public API, you almost certainly do not want to use it
 -- | directly, and it may be removed from the public API in the near future.
 -- | Use `untrivial` if none of the existing utilities match your use case.
-data UnfoldrCall a b = UnfoldrCall (b -> Maybe (a /\ b)) b
+data UnfoldrCall a b = UnfoldrCall (Generator a b) b
 
 -- | A newtype wrapping `UnfoldrCall a b`, existentially quantified over the "seed" type `b`.
 -- | Not meant to specifically be constructed directly--its `Unfoldable` instance
@@ -61,8 +65,8 @@ infixr 0 turbofish as ::<*>
 
 -- | Convenience function for inspecting `Trivial` values.
 -- | Calls the function argument on the inner `UnfoldrCall`.
-untrivial :: forall a c. (forall b. UnfoldrCall a b -> c) -> Trivial a -> c
-untrivial f = runExists f <<< unwrap
+untrivial :: forall a c. (forall b. Generator a b -> b -> c) -> Trivial a -> c
+untrivial f = runExists (\(UnfoldrCall g seed) -> f g seed) <<< unwrap
 
 -- | Wraps both arguments to `unfoldr` in an `UnfoldrCall`.
 instance trivialUnfoldable :: Unfoldable Trivial where
@@ -74,12 +78,12 @@ instance trivialUnfoldable1 :: Unfoldable1 Trivial where
 instance trivialFunctor :: Functor Trivial where
   map :: forall a c. (a -> c) -> Trivial a -> Trivial c
   map f = untrivial eMap
-    where eMap :: forall b. UnfoldrCall a b -> Trivial c
-          eMap (UnfoldrCall g seed) = Trivial
-                                    $ mkExists
-                                    $ UnfoldrCall (
-                                      map (lmap f) <<< g
-                                    ) seed
+    where eMap :: forall b. Generator a b -> b -> Trivial c
+          eMap g seed = Trivial
+                        $ mkExists
+                        $ UnfoldrCall (
+                          map (lmap f) <<< g
+                        ) seed
 
 -- | Provides a default implementation of `unfoldr1` using `unfoldr` to satisfy
 -- | the superclass bound on `Unfoldable`.
@@ -93,8 +97,8 @@ unfoldr1Default f = unfoldr (map f) <<< Just
 -- | In all other cases, simply use the desired type directly.
 runTrivial :: forall a u. Unfoldable u => Trivial a -> u a
 runTrivial = untrivial eRunTrivial
-  where eRunTrivial :: forall b. UnfoldrCall a b -> u a
-        eRunTrivial (UnfoldrCall f seed) = unfoldr f seed
+  where eRunTrivial :: forall b. Generator a b -> b -> u a
+        eRunTrivial f seed = unfoldr f seed
 
 -- | The *raison d'être* for `Trivial`.
 -- | Allows folding polymorphic `Unfoldable`s as they generate.
@@ -103,8 +107,8 @@ runTrivial = untrivial eRunTrivial
 instance trivialFoldable :: Foldable Trivial where
   foldl :: forall a c. (c -> a -> c) -> c -> Trivial a -> c
   foldl f foldInit = untrivial eFoldl
-    where eFoldl :: forall b. UnfoldrCall a b -> c
-          eFoldl (UnfoldrCall g unfoldSeed) = lockstep unfoldSeed foldInit
+    where eFoldl :: forall b. Generator a b -> b -> c
+          eFoldl g unfoldSeed = lockstep unfoldSeed foldInit
             where lockstep :: b -> c -> c
                   lockstep seed acc
                     | Just (a /\ seed') <- g seed = lockstep seed' $ f acc a

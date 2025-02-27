@@ -28,7 +28,7 @@ import Data.Unfoldable1.Trivial1.Internal
  ( Trivial1
  , (::<+>)
  , untrivial1
- , Unfoldr1Call(..)
+ , Generator1
  , uncons1
  )
 
@@ -43,8 +43,8 @@ import Data.Tuple.Nested ((/\), type (/\))
 -- | Returns the first element.
 head1 :: forall a. Trivial1 a -> a
 head1 = untrivial1 eHead1
-  where eHead1 :: forall b. Unfoldr1Call a b -> a
-        eHead1 (Unfoldr1Call f seed) = fst $ f seed
+  where eHead1 :: forall b. Generator1 a b -> b -> a
+        eHead1 f seed = fst $ f seed
 
 -- | Removes the first element.
 tail1 :: forall a u. Unfoldable u => Trivial1 a -> u a

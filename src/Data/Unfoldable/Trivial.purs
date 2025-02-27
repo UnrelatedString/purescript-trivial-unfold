@@ -19,7 +19,6 @@ module Data.Unfoldable.Trivial
 
 import Data.Unfoldable.Trivial.Internal
   ( unfoldr1Default
-
   , trivial
   , turbofish
   , (::<*>)
@@ -28,7 +27,7 @@ import Data.Unfoldable1.Trivial1 as Reexports
 
 import Prelude
 
-import Data.Unfoldable.Trivial.Internal (Trivial, UnfoldrCall(..), untrivial, runTrivial)
+import Data.Unfoldable.Trivial.Internal (Trivial, Generator, untrivial, runTrivial)
 
 import Data.Unfoldable(class Unfoldable, unfoldr, none)
 import Data.Unfoldable1 (class Unfoldable1, unfoldr1)
@@ -41,8 +40,8 @@ import Data.Tuple.Nested ((/\), type (/\))
 -- | or `Nothing` if there are no elements.
 uncons :: forall a u. Unfoldable u => Trivial a -> Maybe (a /\ u a)
 uncons = untrivial eUncons
-  where eUncons :: forall b. UnfoldrCall a b -> Maybe (a /\ u a)
-        eUncons (UnfoldrCall f seed) = f seed <#> map (unfoldr f)
+  where eUncons :: forall b. Generator a b -> b -> Maybe (a /\ u a)
+        eUncons f seed = f seed <#> map (unfoldr f)
 
 -- | Returns the first element, if present.
 -- |
@@ -98,8 +97,8 @@ refold = fold
 -- | Do not use this to create a data structure. Please use Data.List.Lazy instead.
 cons :: forall a u. Unfoldable1 u => a -> Trivial a -> u a
 cons h t = untrivial eCons t
-  where eCons :: forall b. UnfoldrCall a b -> u a
-        eCons (UnfoldrCall f seed) = unfoldr1 hilbertHotel $ h /\ seed
+  where eCons :: forall b. Generator a b -> b -> u a
+        eCons f seed = unfoldr1 hilbertHotel $ h /\ seed
           where hilbertHotel :: a /\ b -> a /\ Maybe (a /\ b)
                 hilbertHotel = map f
 
@@ -108,8 +107,8 @@ cons h t = untrivial eCons t
 -- | Do not use this to create a data structure. Please use Data.List.Lazy instead.
 snoc :: forall a u. Unfoldable1 u => Trivial a -> a -> u a
 snoc t l = untrivial eSnoc t
-  where eSnoc :: forall b. UnfoldrCall a b -> u a
-        eSnoc (UnfoldrCall f seed) = unfoldr1 failsafed seed
+  where eSnoc :: forall b. Generator a b -> b -> u a
+        eSnoc f seed = unfoldr1 failsafed seed
           where failsafed :: b -> a /\ Maybe b
                 failsafed b
                   | Just (a /\ b') <- f b = a /\ Just b'
