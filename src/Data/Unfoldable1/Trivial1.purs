@@ -12,7 +12,7 @@ module Data.Unfoldable1.Trivial1
  , iterate
  , head1
  , tail1
- --, take1
+ , take1
  ) where
 
 import Data.Unfoldable1.Trivial1.Internal
@@ -50,8 +50,15 @@ head1 = untrivial1 eHead1
 tail1 :: forall a u. Unfoldable u => Trivial1 a -> u a
 tail1 = snd <<< uncons1
 
--- -- | Keep only a strictly positive number of elements from the start.
--- take1 :: forall a u. Unfoldable1 u => Int -> Trivial1 a -> u a
+-- | Keep only a strictly positive number of elements from the start.
+take1 :: forall a u. Unfoldable1 u => Int -> Trivial1 a -> u a
+take1 n = untrivial1 eTake1
+  where eTake1 :: forall b. Generator1 a b -> b -> u a
+        eTake1 f seed = unfoldr1 taker $ n /\ seed
+          where taker :: Generator1 a (Int /\ b)
+                taker (m /\ b)
+                  | m <= 1 = Nothing <$ f b
+                  | otherwise = map ((/\) (m - 1)) <$> f b
 
 -- | `foldl1` specialized to `Trivial1`. "Re-fold" a polymorphic `Unfoldable1`.
 -- | Usually cleaner and more convenient than `turbofish`, when applicable.

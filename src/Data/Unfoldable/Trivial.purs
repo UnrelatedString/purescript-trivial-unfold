@@ -5,7 +5,7 @@ module Data.Unfoldable.Trivial
  ( module Reexports
  , head
  , tail
- -- , take
+ , take
  , cons
  , snoc
  , uncons
@@ -23,7 +23,23 @@ import Data.Unfoldable.Trivial.Internal
   , turbofish
   , (::<*>)
   ) as Reexports
-import Data.Unfoldable1.Trivial1 as Reexports
+import Data.Unfoldable1.Trivial1
+ ( Trivial1
+ , trivial1
+ , turbofish1
+ , (::<+>)
+ , uncons1
+ , refoldl1
+ , refoldr1
+ , refoldMap1
+ , refold1
+ , foldEnum
+ , unfoldrInf
+ , iterate
+ , head1
+ , tail1
+ , take1
+ ) as Reexports
 
 import Prelude
 
@@ -66,8 +82,15 @@ index t i
   | i == 0 = head t
   | otherwise = index (tail t) (i - 1)
 
--- -- | Keep only a number of elements from the start.
--- take :: forall a u. Unfoldable u => Int -> Trivial a -> u a
+-- | Keep only a number of elements from the start.
+take :: forall a u. Unfoldable u => Int -> Trivial a -> u a
+take n = untrivial eTake
+  where eTake :: forall b. Generator a b -> b -> u a
+        eTake f seed = unfoldr taker $ n /\ seed
+          where taker :: Generator a (Int /\ b)
+                taker (m /\ b)
+                  | m <= 0 = Nothing
+                  | otherwise = map ((/\) (m - 1)) <$> f b
 
 -- | Drop a number of elements from the start.
 drop :: forall a u. Unfoldable u => Int -> Trivial a -> u a
