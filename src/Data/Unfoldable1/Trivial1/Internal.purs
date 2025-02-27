@@ -1,12 +1,10 @@
 -- | This module provides the `Trivial1` type as an existentially quantified
 -- | dumb wrapper around `unfold1`, which can be inspected and manipulated
--- | to implement various typeclasses and the utilities in Data.Unfoldable.Trivial.Adapter.
+-- | to implement various typeclasses and the utilities in Data.Unfoldable1.Trivia1.
 -- | 
 -- | This module also contains the implementations of utilities which rely on directly
--- | inspecting `Trivial1` values and are re-exported by Data.Unfoldable.Trivial.Adapter.
+-- | inspecting `Trivial1` values and are re-exported by Data.Unfoldable.Trivial1.
 -- | Use this module directly only if you intend to directly inspect `Trivial1` values yourself.
--- | The public API of this module may change dramatically in the next major version, or
--- | even sooner within unstable 0.x.x versions.
 
 module Data.Unfoldable1.Trivial1.Internal
  ( Trivial1
@@ -64,7 +62,7 @@ turbofish1 = identity
 infixr 0 turbofish1 as ::<+>
 
 -- | Convenience function for inspecting `Trivial` values.
--- | Calls the function argument on the inner `UnfoldrCall`.
+-- | Calls the function argument on the contents of the inner `Exists`.
 untrivial1 :: forall a c. (forall b. Generator1 a b -> b -> c) -> Trivial1 a -> c
 untrivial1 f (Trivial1 e) = runExists (\(Unfoldr1Call g seed) -> f g seed) e
 
