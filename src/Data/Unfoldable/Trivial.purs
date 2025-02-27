@@ -73,7 +73,7 @@ index t i
 drop :: forall a u. Unfoldable u => Int -> Trivial a -> u a
 drop n t
   | n <= 0 = runTrivial t
-  | otherwise = tail t
+  | otherwise = drop (n-1) $ tail t
 
 -- | `foldl` specialized to `Trivial`. "Re-fold" a polymorphic `Unfoldable`.
 -- | Usually cleaner and more convenient than `turbofish`, when applicable.
