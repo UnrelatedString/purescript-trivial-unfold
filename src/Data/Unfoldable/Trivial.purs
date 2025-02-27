@@ -1,13 +1,14 @@
 -- | This "module" provides various adapters and other such utilities
 -- | for `Unfoldable1` and `Unfoldable`.
->:3
+
 module Data.Unfoldable.Trivial
  ( module Reexports
---  , head
---  , tail
--- , take
---  , cons
---  , snoc
+ , head
+ , tail
+ -- , take
+ , cons
+ , snoc
+ , uncons
  , index
 -- , drop
  , refoldl
@@ -18,10 +19,7 @@ module Data.Unfoldable.Trivial
 
 import Data.Unfoldable.Trivial.Internal
   ( unfoldr1Default
-  , head
-  , tail
-  , cons
-  , snoc
+
   , trivial
   , turbofish
   , (::<*>)
@@ -30,15 +28,34 @@ import Data.Unfoldable1.Trivial1 as Reexports
 
 import Prelude
 
-import Data.Unfoldable.Trivial.Internal (Trivial, head, tail, cons)
-import Data.Unfoldable1.Trivial1.Internal (Trivial1, (::<+>))
+import Data.Unfoldable.Trivial.Internal (Trivial, UnfoldrCall(..), untrivial, runTrivial)
 
+import Data.Unfoldable(class Unfoldable, unfoldr, none)
 import Data.Unfoldable1 (class Unfoldable1, unfoldr1)
 import Data.Foldable (foldl, foldr, foldMap, fold)
-import Data.Semigroup.Foldable (foldl1, foldr1, foldMap1, fold1)
-import Data.Maybe (Maybe(..))
-import Data.Enum (class BoundedEnum, upFromIncluding)
+import Data.Maybe (Maybe(..), maybe)
+import Data.Tuple (snd)
 import Data.Tuple.Nested ((/\), type (/\))
+
+-- | Returns the first element and a new `Unfoldable` generating the remaining elements,
+-- | or `Nothing` if there are no elements.
+uncons :: forall a u. Unfoldable u => Trivial a -> Maybe (a /\ u a)
+uncons = untrivial eUncons
+  where eUncons :: forall b. UnfoldrCall a b -> Maybe (a /\ u a)
+        eUncons (UnfoldrCall f seed) = f seed <#> map (unfoldr f)
+
+-- | Returns the first element, if present.
+-- |
+-- | Not particularly useful, because this is just the `Unfoldable`
+-- | instance for `Maybe`. Included by analogy with `head1`.
+-- AND because it took me like. MULTIPLE DAYS to realize this LMAO.
+-- Polymorphic return types kinda mess with my head
+head :: forall a. Trivial a -> Maybe a
+head = runTrivial
+
+-- | Removes the first element, if present.
+tail :: forall a u. Unfoldable u => Trivial a -> u a
+tail = maybe none snd <<< uncons
 
 -- | Get the element at the specified 0-index, or `Nothing` if the index is out-of-bounds.
 -- |
@@ -75,3 +92,25 @@ refoldMap = foldMap
 -- | Usually cleaner and more convenient than `turbofish`, when applicable.
 refold :: forall a. Monoid a => Trivial a -> a
 refold = fold
+
+-- | Prepend an element.
+-- |
+-- | Do not use this to create a data structure. Please use Data.List.Lazy instead.
+cons :: forall a u. Unfoldable1 u => a -> Trivial a -> u a
+cons h t = untrivial eCons t
+  where eCons :: forall b. UnfoldrCall a b -> u a
+        eCons (UnfoldrCall f seed) = unfoldr1 hilbertHotel $ h /\ seed
+          where hilbertHotel :: a /\ b -> a /\ Maybe (a /\ b)
+                hilbertHotel = map f
+
+-- | Append an element.
+-- |
+-- | Do not use this to create a data structure. Please use Data.List.Lazy instead.
+snoc :: forall a u. Unfoldable1 u => Trivial a -> a -> u a
+snoc t l = untrivial eSnoc t
+  where eSnoc :: forall b. UnfoldrCall a b -> u a
+        eSnoc (UnfoldrCall f seed) = unfoldr1 failsafed seed
+          where failsafed :: b -> a /\ Maybe b
+                failsafed b
+                  | Just (a /\ b') <- f b = a /\ Just b'
+                  | otherwise = l /\ Nothing

@@ -16,8 +16,6 @@ module Data.Unfoldable1.Trivial1.Internal
  , turbofish1
  , (::<+>)
  , uncons1
- , head1
- , tail1
  --, take1
  , runTrivial1
  ) where
@@ -85,22 +83,6 @@ instance trivial1Functor :: Functor Trivial1 where
                                        lmap f <<< g
                                      ) seed
 
--- | Returns the first element, and an `Unfoldable` of the remaining elements.
-uncons1 :: forall a u. Unfoldable u => Trivial1 a -> a /\ u a
-uncons1 = untrivial1 eUncons1
-  where eUncons1 :: forall b. Unfoldr1Call a b -> a /\ u a
-        eUncons1 (Unfoldr1Call f seed) = f seed <#> maybe none (unfoldr1 f)
-
--- | Returns the first element.
-head1 :: forall a. Trivial1 a -> a
-head1 = untrivial1 eHead1
-  where eHead1 :: forall b. Unfoldr1Call a b -> a
-        eHead1 (Unfoldr1Call f seed) = fst $ f seed
-
--- | Removes the first element.
-tail1 :: forall a u. Unfoldable u => Trivial1 a -> u a
-tail1 = snd <<< uncons1
-
 -- | Converts to any other `Unfoldable1`.
 -- | Can also be seen as evaluating the inner `Unfoldr1Call`.
 -- | 
@@ -110,6 +92,12 @@ runTrivial1 :: forall a u. Unfoldable1 u => Trivial1 a -> u a
 runTrivial1 = untrivial1 eRunTrivial1
   where eRunTrivial1 :: forall b. Unfoldr1Call a b -> u a
         eRunTrivial1 (Unfoldr1Call f seed) = unfoldr1 f seed
+
+-- | Returns the first element, and an `Unfoldable` of the remaining elements.
+uncons1 :: forall a u. Unfoldable u => Trivial1 a -> a /\ u a
+uncons1 = untrivial1 eUncons1
+  where eUncons1 :: forall b. Unfoldr1Call a b -> a /\ u a
+        eUncons1 (Unfoldr1Call f seed) = f seed <#> maybe none (unfoldr1 f)
 
 instance trivial1Foldable :: Foldable Trivial1 where
   foldl :: forall a c. (c -> a -> c) -> c -> Trivial1 a -> c
@@ -133,7 +121,8 @@ instance trivial1Foldable :: Foldable Trivial1 where
 instance trivial1Foldable1 :: Foldable1 Trivial1 where
   -- I feel like there might be a cleaner way to do this that's still elegant but eh
   foldl1 :: forall a. (a -> a -> a) -> Trivial1 a -> a
-  foldl1 f t = foldl f (head1 t) ::<*> tail1 t
+  foldl1 f t = foldl f first ::<*> rest
+    where first /\ rest = uncons1 t
 
   foldr1 f = foldr1Default f
   foldMap1 f = foldMap1DefaultL f

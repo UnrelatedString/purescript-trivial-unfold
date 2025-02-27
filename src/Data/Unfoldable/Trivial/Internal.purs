@@ -16,21 +16,16 @@ module Data.Unfoldable.Trivial.Internal
  , turbofish
  , (::<*>)
  , unfoldr1Default
- , uncons
- , head
- , tail
  , runTrivial
- , cons
- , snoc
  ) where
 
 import Prelude
 
 import Data.Foldable (class Foldable, foldrDefault, foldMapDefaultL)
-import Data.Unfoldable (class Unfoldable, class Unfoldable1, unfoldr, unfoldr1, none)
-import Data.Tuple (snd, uncurry)
+import Data.Unfoldable (class Unfoldable, class Unfoldable1, unfoldr)
+import Data.Tuple (uncurry)
 import Data.Tuple.Nested ((/\), type (/\))
-import Data.Maybe (Maybe(..), maybe)
+import Data.Maybe (Maybe(..))
 import Data.Exists (Exists, mkExists, runExists)
 import Data.Newtype (class Newtype, unwrap)
 import Data.Bifunctor (lmap)
@@ -91,26 +86,6 @@ instance trivialFunctor :: Functor Trivial where
 unfoldr1Default :: forall a b t. Unfoldable t => (b -> a /\ Maybe b) -> b -> t a
 unfoldr1Default f = unfoldr (map f) <<< Just
 
--- | Returns the first element and a new `Unfoldable` generating the remaining elements,
--- | or `Nothing` if there are no elements.
-uncons :: forall a u. Unfoldable u => Trivial a -> Maybe (a /\ u a)
-uncons = untrivial eUncons
-  where eUncons :: forall b. UnfoldrCall a b -> Maybe (a /\ u a)
-        eUncons (UnfoldrCall f seed) = f seed <#> map (unfoldr f)
-
--- | Returns the first element, if present.
--- |
--- | Not particularly useful, because this is just the `Unfoldable`
--- | instance for `Maybe`. Included by analogy with `head1`.
--- AND because it took me like. MULTIPLE DAYS to realize this LMAO.
--- Polymorphic return types kinda mess with my head
-head :: forall a. Trivial a -> Maybe a
-head = runTrivial
-
--- | Removes the first element, if present.
-tail :: forall a u. Unfoldable u => Trivial a -> u a
-tail = maybe none snd <<< uncons
-
 -- | Converts to any other `Unfoldable`.
 -- | Can also be seen as evaluating the inner `UnfoldrCall`.
 -- | 
@@ -148,25 +123,3 @@ instance trivialArbitrary :: (Arbitrary a, Coarbitrary a) => Arbitrary (Trivial 
       then Nothing
       else map ((i + 1) /\ _) <$> f b
     ) $ 0 /\ seed
-
--- | Prepend an element.
--- |
--- | Do not use this to create a data structure. Please use Data.List.Lazy instead.
-cons :: forall a u. Unfoldable1 u => a -> Trivial a -> u a
-cons h t = untrivial eCons t
-  where eCons :: forall b. UnfoldrCall a b -> u a
-        eCons (UnfoldrCall f seed) = unfoldr1 hilbertHotel $ h /\ seed
-          where hilbertHotel :: a /\ b -> a /\ Maybe (a /\ b)
-                hilbertHotel = map f
-
--- | Append an element.
--- |
--- | Do not use this to create a data structure. Please use Data.List.Lazy instead.
-snoc :: forall a u. Unfoldable1 u => Trivial a -> a -> u a
-snoc t l = untrivial eSnoc t
-  where eSnoc :: forall b. UnfoldrCall a b -> u a
-        eSnoc (UnfoldrCall f seed) = unfoldr1 failsafed seed
-          where failsafed :: b -> a /\ Maybe b
-                failsafed b
-                  | Just (a /\ b') <- f b = a /\ Just b'
-                  | otherwise = l /\ Nothing

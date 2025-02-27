@@ -18,7 +18,6 @@ import Control.Monad.Trans.Class (lift)
 import Data.Unfoldable.Trivial.Internal
  ( Trivial
  , trivial
- , uncons
  , runTrivial
  , (::<*>)
 )
@@ -33,6 +32,7 @@ import Data.Unfoldable.Trivial
  , index
  , foldEnum
  , iterate
+ , uncons
  , cons
  , snoc
  , refold1

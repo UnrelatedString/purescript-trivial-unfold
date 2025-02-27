@@ -1,6 +1,6 @@
 -- | This module provides various adapters and other such utilities
 -- | for `Unfoldable1`.
->:3
+
 module Data.Unfoldable1.Trivial1
  ( module Reexports
  , refoldl1
@@ -10,38 +10,45 @@ module Data.Unfoldable1.Trivial1
  , foldEnum
  , unfoldrInf
  , iterate
---  , head1
---  , tail1
---  , take1
+ , head1
+ , tail1
+ --, take1
  ) where
 
 import Data.Unfoldable1.Trivial1.Internal
   ( Trivial1
   , trivial1
   , turbofish1
-  , head1
-  , tail1
-  , (::<+>)) as Reexports
+  , (::<+>)
+  , uncons1) as Reexports
 
 import Prelude
 
 import Data.Unfoldable1.Trivial1.Internal
  ( Trivial1
  , (::<+>)
+ , untrivial1
+ , Unfoldr1Call(..)
+ , uncons1
  )
 
-import Data.Unfoldable.Trivial.Internal (Trivial, cons)
-
-import Data.Foldable (foldl)
-import Data.Semigroup.Foldable (class Foldable1)
+import Data.Unfoldable (class Unfoldable)
 import Data.Unfoldable1 (class Unfoldable1, unfoldr1)
-import Data.Foldable (foldl, foldr, foldMap, fold)
 import Data.Semigroup.Foldable (foldl1, foldr1, foldMap1, fold1)
 import Data.Maybe (Maybe(..))
 import Data.Enum (class BoundedEnum, upFromIncluding)
+import Data.Tuple (fst, snd)
 import Data.Tuple.Nested ((/\), type (/\))
-import Data.Maybe (Maybe(..), maybe)
-import Data.Bifunctor (lmap)
+
+-- | Returns the first element.
+head1 :: forall a. Trivial1 a -> a
+head1 = untrivial1 eHead1
+  where eHead1 :: forall b. Unfoldr1Call a b -> a
+        eHead1 (Unfoldr1Call f seed) = fst $ f seed
+
+-- | Removes the first element.
+tail1 :: forall a u. Unfoldable u => Trivial1 a -> u a
+tail1 = snd <<< uncons1
 
 -- -- | Keep only a strictly positive number of elements from the start.
 -- take1 :: forall a u. Unfoldable1 u => Int -> Trivial1 a -> u a
@@ -86,4 +93,4 @@ unfoldrInf = unfoldr1 <<< (map Just <<< _)
 -- | This should only be used to produce either lazy types (like `Trivial`) or
 -- | types with truncating `Unfoldable1` instances (like `Maybe`).
 iterate :: forall a u. Unfoldable1 u => (a -> a) -> a -> u a
-iterate f seed = cons seed $ unfoldrInf (\a -> f a /\ f a) seed
+iterate f seed = unfoldr1 (map \a -> Just (f a /\ f a)) $ seed /\ seed
