@@ -60,7 +60,6 @@ import Data.Semigroup.Foldable (foldl1, foldr1, foldMap1DefaultL, foldMap1Defaul
 import Type.Proxy (Proxy(..))
 import Data.Array (toUnfoldable)
 import Data.Monoid.Multiplicative (Multiplicative(..))
-import Data.Semigroup.Last (Last(..))
 
 iff :: forall a. Boolean -> a -> Maybe a
 iff = ($>) <<< guard
@@ -97,8 +96,9 @@ smallSuite = suite "small stuff" do
     quickCheck \(x :: Maybe Char) -> runTrivial (fromMaybe x) === x
   test "take <> drop" do
     quickCheck \(x :: Trivial Int) n -> refoldMap singleton (take n x) <> refoldMap singleton (drop n x) === (runTrivial x :: Array _)
-  test "take and drop agree with index" do
+  test "take agrees with index" do
     quickCheck \(x :: Trivial Char) n -> refoldMap (Just <<< Last) (take n x) === Last <$> index x ((min n $ length x) - 1)
+  test "drop agrees with index" do
     quickCheck \(x :: Trivial Char) n -> drop n x === index x n
   -- test "take1 agrees with index1" do
   --   quickCheck \(x :: Trivial Char) n -> foldMap Last 

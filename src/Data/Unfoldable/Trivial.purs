@@ -93,10 +93,15 @@ take n = untrivial eTake
                   | otherwise = map ((/\) (m - 1)) <$> f b
 
 -- | Drop a number of elements from the start.
+-- Surprised the old version didn't tail call optimize but this is smarter/lazier anyways
 drop :: forall a u. Unfoldable u => Int -> Trivial a -> u a
-drop n t
-  | n <= 0 = runTrivial t
-  | otherwise = drop (n-1) $ tail t
+drop n = untrivial eDrop 
+  where eDrop :: forall b. Generator a b -> b -> u a
+        eDrop f seed = unfoldr dropper $ n /\ seed
+          where dropper :: Generator a (Int /\ b)
+                dropper (m /\ b)
+                  | m <= 0 = map (m /\ _) <$> f b
+                  | otherwise = dropper =<< ((/\) (m - 1)) <$> snd <$> (f b)
 
 -- | `foldl` specialized to `Trivial`. "Re-fold" a polymorphic `Unfoldable`.
 -- | Usually cleaner and more convenient than `turbofish`, when applicable.
