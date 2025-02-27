@@ -22,7 +22,11 @@ import Data.Unfoldable.Trivial.Internal
  , (::<*>)
 )
 
-import Data.Unfoldable1.Trivial1.Internal (Trivial1, runTrivial1, (::<+>))
+import Data.Unfoldable1.Trivial1.Internal
+ ( Trivial1
+ , runTrivial1
+ , (::<+>)
+)
 
 import Data.Unfoldable.Trivial
  ( head1
@@ -36,6 +40,9 @@ import Data.Unfoldable.Trivial
  , cons
  , snoc
  , refold1
+ , refoldMap
+ , take
+ , take1
  , drop
 )
 
@@ -48,11 +55,12 @@ import Data.Semigroup.First (First(..))
 import Data.Semigroup.Last (Last(..))
 import Data.Unfoldable (none, fromMaybe, replicate)
 import Data.Unfoldable1 (singleton, replicate1, unfoldr1)
-import Data.Foldable (foldl, foldr, foldMapDefaultL, foldMapDefaultR, intercalate)
+import Data.Foldable (foldl, foldr, foldMapDefaultL, foldMapDefaultR, intercalate, length)
 import Data.Semigroup.Foldable (foldl1, foldr1, foldMap1DefaultL, foldMap1DefaultR)
 import Type.Proxy (Proxy(..))
 import Data.Array (toUnfoldable)
 import Data.Monoid.Multiplicative (Multiplicative(..))
+import Data.Semigroup.Last (Last(..))
 
 iff :: forall a. Boolean -> a -> Maybe a
 iff = ($>) <<< guard
@@ -87,6 +95,13 @@ smallSuite = suite "small stuff" do
     quickCheck \(x :: Char) -> head (tail $ upFrom x) === (succ =<< succ x)
   test "Maybe round trip" do
     quickCheck \(x :: Maybe Char) -> runTrivial (fromMaybe x) === x
+  test "take <> drop" do
+    quickCheck \(x :: Trivial Int) n -> refoldMap singleton (take n x) <> refoldMap singleton (drop n x) === (runTrivial x :: Array _)
+  test "take and drop agree with index" do
+    quickCheck \(x :: Trivial Char) n -> refoldMap (Just <<< Last) (take n x) === Last <$> index x ((min n $ length x) - 1)
+    quickCheck \(x :: Trivial Char) n -> drop n x === index x n
+  -- test "take1 agrees with index1" do
+  --   quickCheck \(x :: Trivial Char) n -> foldMap Last 
 
 buildSuite :: TestSuite
 buildSuite = suite "build" do
