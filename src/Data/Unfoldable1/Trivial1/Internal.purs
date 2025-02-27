@@ -14,7 +14,6 @@ module Data.Unfoldable1.Trivial1.Internal
  , turbofish1
  , (::<+>)
  , uncons1
- --, take1
  , runTrivial1
  ) where
 

@@ -10,7 +10,7 @@ module Data.Unfoldable.Trivial
  , snoc
  , uncons
  , index
--- , drop
+ , drop
  , refoldl
  , refoldr
  , refoldMap
@@ -69,8 +69,11 @@ index t i
 -- -- | Keep only a number of elements from the start.
 -- take :: forall a u. Unfoldable u => Int -> Trivial a -> u a
 
--- -- | Drop a number of elements from the start.
--- drop :: forall a u. Unfoldable u => Int -> Trivial a -> u a
+-- | Drop a number of elements from the start.
+drop :: forall a u. Unfoldable u => Int -> Trivial a -> u a
+drop n t
+  | n <= 0 = runTrivial t
+  | otherwise = tail t
 
 -- | `foldl` specialized to `Trivial`. "Re-fold" a polymorphic `Unfoldable`.
 -- | Usually cleaner and more convenient than `turbofish`, when applicable.
