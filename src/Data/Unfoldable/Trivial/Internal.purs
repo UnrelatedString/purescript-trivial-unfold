@@ -9,9 +9,8 @@
 -- | even sooner within unstable 0.x.x versions.
 
 module Data.Unfoldable.Trivial.Internal
- ( Trivial(..)
+ ( Trivial
  , Generator
- , UnfoldrCall(..)
  , trivial
  , untrivial
  , turbofish
@@ -28,7 +27,6 @@ import Data.Tuple (uncurry)
 import Data.Tuple.Nested ((/\), type (/\))
 import Data.Maybe (Maybe(..))
 import Data.Exists (Exists, mkExists, runExists)
-import Data.Newtype (class Newtype, unwrap)
 import Data.Bifunctor (lmap)
 import Test.QuickCheck.Arbitrary (class Arbitrary, class Coarbitrary, arbitrary)
 import Test.QuickCheck.Gen (sized)
@@ -38,16 +36,13 @@ type Generator a b = b -> Maybe (a /\ b)
 
 -- | A constructor taking the same arguments as `unfoldr`.
 -- |
--- | Although this is part of the public API, you almost certainly do not want to use it
--- | directly, and it may be removed from the public API in the near future.
--- | Use `untrivial` if none of the existing utilities match your use case.
+-- | Implementation detail. No longer part of the public API.
 data UnfoldrCall a b = UnfoldrCall (Generator a b) b
 
--- | A newtype wrapping `UnfoldrCall a b`, existentially quantified over the "seed" type `b`.
--- | Not meant to specifically be constructed directly--its `Unfoldable` instance
--- | is meant to be used to "intercept" `unfoldr` calls in other functions.
+-- | A type wrapping `unfoldr` calls, existentially quantified over the seed type
+-- | so that it can be ignored in the type constructor. Its `Unfoldable` instance
+-- | means that it can directly be constructed by calling `unfoldr`.
 newtype Trivial a = Trivial (Exists (UnfoldrCall a))
-derive instance Newtype (Trivial a) _
 
 -- | Specializes its argument to `Trivial`.
 trivial :: forall a. Trivial a -> Trivial a
@@ -66,7 +61,7 @@ infixr 0 turbofish as ::<*>
 -- | Convenience function for inspecting `Trivial` values.
 -- | Calls the function argument on the inner `UnfoldrCall`.
 untrivial :: forall a c. (forall b. Generator a b -> b -> c) -> Trivial a -> c
-untrivial f = runExists (\(UnfoldrCall g seed) -> f g seed) <<< unwrap
+untrivial f (Trivial e) = runExists (\(UnfoldrCall g seed) -> f g seed) e
 
 -- | Wraps both arguments to `unfoldr` in an `UnfoldrCall`.
 instance trivialUnfoldable :: Unfoldable Trivial where
