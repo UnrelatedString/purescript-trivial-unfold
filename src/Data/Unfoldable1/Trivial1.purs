@@ -13,6 +13,7 @@ module Data.Unfoldable1.Trivial1
  , head1
  , tail1
  , take1
+ , index1
  ) where
 
 import Data.Unfoldable1.Trivial1.Internal
@@ -59,6 +60,28 @@ take1 n = untrivial1 eTake1
                 taker (m /\ b)
                   | m <= 1 = Nothing <$ f b
                   | otherwise = map ((/\) (m - 1)) <$> f b
+
+-- | Get the element at the specified *modular* 0-index, i.e. the element
+-- | at that 0-index in the elements infinitely extended left and right.
+-- |
+-- | Will loop infinitely if given an infinite `Unfoldable1` and a negative index.
+-- | Will not loop infinitely if given an infinite `Unfoldable1` and a nonnegative index;
+-- | computes the length for itself as it iterates. Iterates twice when resolving an out of
+-- | bounds index; does not store any intermediate results. In general, this function is
+-- | not supposed to be *used for modular indexing*, because modular indexing just happens
+-- | to be a simple and sensible way to guarantee an output, and there's no point in this
+-- | existing without a guaranteed output (just use `index`).
+-- | If you want modular indexing for the mod, please use an actual container.
+-- TODO: something that actually does collect the last n in one pass? either a function like this or a straight up newtype. actually no that's stupid because if you do a normal list it can just get GCed anyways :p or wait no it can't because no tail recursion modulo cons huh
+index1 :: forall a. Trivial1 a -> Int -> a
+index1 t i = untrivial1 eIndex1 t
+  where eIndex1 :: forall b. Generator1 a b -> b -> a
+        eIndex1 f seed = index1' 0 $ f seed
+          where index1' :: Int -> a /\ Maybe b -> a
+                index1' n (a /\ _)
+                  | n == i = a
+                index1' n (_ /\ Nothing) = index1 t $ mod i $ n + 1
+                index1' n (_ /\ Just b) = index1' (n + 1) $ f b
 
 -- | `foldl1` specialized to `Trivial1`. "Re-fold" a polymorphic `Unfoldable1`.
 -- | Usually cleaner and more convenient than `turbofish`, when applicable.

@@ -41,8 +41,10 @@ import Data.Unfoldable.Trivial
  , snoc
  , refold1
  , refoldMap
+ , refoldMap1
  , take
  , take1
+ , index1
  , drop
 )
 
@@ -100,8 +102,8 @@ smallSuite = suite "small stuff" do
     quickCheck \(x :: Trivial Char) n -> refoldMap (Just <<< Last) (take n x) === Last <$> index x ((min n $ length x) - 1)
   test "drop agrees with index" do
     quickCheck \(x :: Trivial Char) n -> drop n x === index x (max n 0)
-  -- test "take1 agrees with index1" do
-  --   quickCheck \(x :: Trivial Char) n -> foldMap Last 
+  test "take1 agrees with index1" do
+    quickCheck \(x :: Trivial1 Char) n -> refoldMap1 Last (take1 n x) === (Last $ index1 x (clamp 0 (length x - 1) (n - 1)))
 
 buildSuite :: TestSuite
 buildSuite = suite "build" do
