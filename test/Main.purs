@@ -15,17 +15,20 @@ import Pipes.Core (Producer_, Consumer_)
 import Pipes.Core as Pipes -- I am NOT importing something called "runEffect" unqualified lol
 import Control.Monad.Trans.Class (lift)
 
-import Data.Unfoldable.Trivial
+import Data.Unfoldable.Trivial.Internal
  ( Trivial
  , trivial
- , uncons
  , runTrivial
  , (::<*>)
 )
 
-import Data.Unfoldable1.Trivial1 (Trivial1, runTrivial1, (::<+>))
+import Data.Unfoldable1.Trivial1.Internal
+ ( Trivial1
+ , runTrivial1
+ , (::<+>)
+)
 
-import Data.Unfoldable.Trivial.Adapter
+import Data.Unfoldable.Trivial
  ( head1
  , head
  , tail1
@@ -33,9 +36,16 @@ import Data.Unfoldable.Trivial.Adapter
  , index
  , foldEnum
  , iterate
+ , uncons
  , cons
  , snoc
  , refold1
+ , refoldMap
+ , refoldMap1
+ , take
+ , take1
+ , index1
+ , drop
 )
 
 import Data.Maybe (Maybe(..), isJust, isNothing)
@@ -47,7 +57,7 @@ import Data.Semigroup.First (First(..))
 import Data.Semigroup.Last (Last(..))
 import Data.Unfoldable (none, fromMaybe, replicate)
 import Data.Unfoldable1 (singleton, replicate1, unfoldr1)
-import Data.Foldable (foldl, foldr, foldMapDefaultL, foldMapDefaultR, intercalate)
+import Data.Foldable (foldl, foldr, foldMapDefaultL, foldMapDefaultR, intercalate, length)
 import Data.Semigroup.Foldable (foldl1, foldr1, foldMap1DefaultL, foldMap1DefaultR)
 import Type.Proxy (Proxy(..))
 import Data.Array (toUnfoldable)
@@ -86,6 +96,14 @@ smallSuite = suite "small stuff" do
     quickCheck \(x :: Char) -> head (tail $ upFrom x) === (succ =<< succ x)
   test "Maybe round trip" do
     quickCheck \(x :: Maybe Char) -> runTrivial (fromMaybe x) === x
+  test "take <> drop" do
+    quickCheck \(x :: Trivial Int) n -> refoldMap singleton (take n x) <> refoldMap singleton (drop n x) === (runTrivial x :: Array _)
+  test "take agrees with index" do
+    quickCheck \(x :: Trivial Char) n -> refoldMap (Just <<< Last) (take n x) === Last <$> index x ((min n $ length x) - 1)
+  test "drop agrees with index" do
+    quickCheck \(x :: Trivial Char) n -> drop n x === index x (max n 0)
+  test "take1 agrees with index1" do
+    quickCheck \(x :: Trivial1 Char) n -> refoldMap1 Last (take1 n x) === (Last $ index1 x (clamp 0 (length x - 1) (n - 1)))
 
 buildSuite :: TestSuite
 buildSuite = suite "build" do
@@ -156,7 +174,7 @@ exampleInTheReadmeTest :: TestSuite
 exampleInTheReadmeTest = test "Example in the README" $
   Pipes.runEffect $ exampleInTheReadme >-> do
     equals $ Just 'z'
-    equals   "Gonna Give You Up"
+    equals   "gonna give you up"
     equals $ Multiplicative 720
   where equals :: forall a. Show a => a -> Consumer_ String Aff Unit
         equals value = await >>= lift <<< Assert.equal (show value)
@@ -180,8 +198,7 @@ exampleInTheReadme = do
   import Data.Unfoldable (unfoldr1)
   import Data.Multiplicative (Multiplicative(..))
 
-  import Data.Unfoldable.Trivial.Adapter (index, tail, refold1)
-  import Data.Unfoldable.Trivial ((::<*>)) -- ...okay maybe I should put this in Adapter
+  import Data.Unfoldable.Trivial ((::<*>), index, drop, refold1)
   -}
 
   -- main = do
@@ -193,10 +210,11 @@ exampleInTheReadme = do
   -- Fold over a suffix of an Array without constructing a new Array for the suffix.
   -- The (::<*>) operator is ($) specialized to Trivial,
   -- to conveniently make instances decidable.
-  logShow $ intercalate " " ::<*> tail $ toUnfoldable [
-    "Never", "Gonna", "Give", "You", "Up"
+  -- (Note that this can also be accomplished with Data.List.Lazy.)
+  logShow $ intercalate " " ::<*> drop 2 $ toUnfoldable [
+    "I'm", "never", "gonna", "give", "you", "up"
   ]
-  -- > "Gonna Give You Up"
+  -- > "gonna give you up"
 
   -- Fold directly from a generating function.
   -- Basic folds are also provided specialized, with the "re-" prefix.

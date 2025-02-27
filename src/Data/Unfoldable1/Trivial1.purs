@@ -1,133 +1,126 @@
--- | This module provides the `Trivial1` type as an existentially quantified
--- | dumb wrapper around `unfold1`, which can be inspected and manipulated
--- | to implement various typeclasses and the utilities in Data.Unfoldable.Trivial.Adapter.
+-- | This module provides various adapters and other such utilities
+-- | for `Unfoldable1`.
 
 module Data.Unfoldable1.Trivial1
- ( Trivial1(..)
- , Unfoldr1Call(..)
- , trivial1
- , turbofish1
- , (::<+>)
- , uncons1
+ ( module Reexports
+ , refoldl1
+ , refoldr1
+ , refoldMap1
+ , refold1
+ , foldEnum
+ , unfoldrInf
+ , iterate
  , head1
  , tail1
- , runTrivial1
+ , take1
+ , index1
  ) where
+
+import Data.Unfoldable1.Trivial1.Internal
+  ( Trivial1
+  , trivial1
+  , turbofish1
+  , (::<+>)
+  , uncons1) as Reexports
 
 import Prelude
 
-import Data.Foldable (class Foldable, foldrDefault, foldMapDefaultL, foldl)
-import Data.Semigroup.Foldable (class Foldable1, foldr1Default, foldMap1DefaultL)
+import Data.Unfoldable1.Trivial1.Internal
+ ( Trivial1
+ , (::<+>)
+ , untrivial1
+ , Generator1
+ , uncons1
+ )
+
+import Data.Unfoldable (class Unfoldable)
 import Data.Unfoldable1 (class Unfoldable1, unfoldr1)
-import Data.Unfoldable (class Unfoldable, none)
-import Data.Tuple (fst, snd, uncurry)
+import Data.Semigroup.Foldable (foldl1, foldr1, foldMap1, fold1)
+import Data.Maybe (Maybe(..))
+import Data.Enum (class BoundedEnum, upFromIncluding)
+import Data.Tuple (fst, snd)
 import Data.Tuple.Nested ((/\), type (/\))
-import Data.Maybe (Maybe(..), maybe)
-import Data.Exists (Exists, mkExists, runExists)
-import Data.Newtype (class Newtype, unwrap)
-import Data.Bifunctor (lmap)
-import Test.QuickCheck.Arbitrary (class Arbitrary, class Coarbitrary, arbitrary)
-import Test.QuickCheck.Gen (sized)
-
-import Data.Unfoldable.Trivial ((::<*>))
-
--- | A constructor taking the same arguments as `unfoldr1`.
-data Unfoldr1Call a b = Unfoldr1Call (b -> (a /\ Maybe b)) b
-
--- | A newtype wrapping `Unfoldr1Call a b`, existentially quantified over the "seed" type `b`.
-newtype Trivial1 a = Trivial1 (Exists (Unfoldr1Call a))
-derive instance Newtype (Trivial1 a) _
-
--- | Specializes its argument to `Trivial1`.
-trivial1 :: forall a. Trivial1 a -> Trivial1 a
-trivial1 = identity
-
--- | Function application specialized to a `Trivial1` argument,
--- | at the same precedence as `($)`.
--- |
--- | Inspired by the Rust syntax of the same name, often used in the
--- | analogous context of collecting from an iterator.
-turbofish1 :: forall a b. (Trivial1 a -> b) -> Trivial1 a -> b
-turbofish1 = identity
-
-infixr 0 turbofish1 as ::<+>
-
--- | Internal helper for implementing functions on Trivial1.
-untrivial1 :: forall a c. (forall b. Unfoldr1Call a b -> c) -> Trivial1 a -> c
-untrivial1 f = runExists f <<< unwrap
-
--- | Wraps both arguments to `unfoldr1` in an `Unfoldr1Call`.
-instance trivial1Unfoldable1 :: Unfoldable1 Trivial1 where
-  unfoldr1 f seed = Trivial1 $ mkExists $ Unfoldr1Call f seed
-
-instance trivial1Functor :: Functor Trivial1 where
-  map :: forall a c. (a -> c) -> Trivial1 a -> Trivial1 c
-  map f = untrivial1 eMap
-    where eMap :: forall b. Unfoldr1Call a b -> Trivial1 c
-          eMap (Unfoldr1Call g seed) = Trivial1
-                                     $ mkExists
-                                     $ Unfoldr1Call (
-                                       lmap f <<< g
-                                     ) seed
-
--- | Returns the first element, and an `Unfoldable` of the remaining elements.
-uncons1 :: forall a u. Unfoldable u => Trivial1 a -> a /\ u a
-uncons1 = untrivial1 eUncons1
-  where eUncons1 :: forall b. Unfoldr1Call a b -> a /\ u a
-        eUncons1 (Unfoldr1Call f seed) = f seed <#> maybe none (unfoldr1 f)
 
 -- | Returns the first element.
 head1 :: forall a. Trivial1 a -> a
 head1 = untrivial1 eHead1
-  where eHead1 :: forall b. Unfoldr1Call a b -> a
-        eHead1 (Unfoldr1Call f seed) = fst $ f seed
+  where eHead1 :: forall b. Generator1 a b -> b -> a
+        eHead1 f seed = fst $ f seed
 
 -- | Removes the first element.
 tail1 :: forall a u. Unfoldable u => Trivial1 a -> u a
 tail1 = snd <<< uncons1
 
--- | Converts to any other `Unfoldable1`.
--- | Can also be seen as evaluating the inner `Unfoldr1Call`.
-runTrivial1 :: forall a u. Unfoldable1 u => Trivial1 a -> u a
-runTrivial1 = untrivial1 eRunTrivial1
-  where eRunTrivial1 :: forall b. Unfoldr1Call a b -> u a
-        eRunTrivial1 (Unfoldr1Call f seed) = unfoldr1 f seed
+-- | Keep only a strictly positive number of elements from the start.
+take1 :: forall a u. Unfoldable1 u => Int -> Trivial1 a -> u a
+take1 n = untrivial1 eTake1
+  where eTake1 :: forall b. Generator1 a b -> b -> u a
+        eTake1 f seed = unfoldr1 taker $ n /\ seed
+          where taker :: Generator1 a (Int /\ b)
+                taker (m /\ b)
+                  | m <= 1 = Nothing <$ f b
+                  | otherwise = map ((/\) (m - 1)) <$> f b
 
-instance trivial1Foldable :: Foldable Trivial1 where
-  foldl :: forall a c. (c -> a -> c) -> c -> Trivial1 a -> c
-  foldl f foldInit = untrivial1 eFoldl
-    where eFoldl :: forall b. Unfoldr1Call a b -> c
-          eFoldl (Unfoldr1Call g unfoldSeed) = lockstep unfoldSeed foldInit
-            where lockstep :: b -> c -> c
-                  lockstep seed acc
-                    | a /\ Just seed' <- g seed = lockstep seed' $ f acc a
-                    | otherwise = f acc $ fst $ g seed
-
-  foldr f = foldrDefault f
-  foldMap f = foldMapDefaultL f
-
--- | The *raison d'être* for `Trivial1`.
--- | Allows folding polymorphic `Unfoldable1`s as they generate
--- | with no explicit starting value. In particular, `foldMap1`
--- | needs map only into a `Semigroup` rather than a `Monoid`.
+-- | Get the element at the specified *modular* 0-index, i.e. the element
+-- | at that 0-index in the elements infinitely extended left and right.
 -- |
--- | `foldr1` uses a default implementation and may be inefficient.
-instance trivial1Foldable1 :: Foldable1 Trivial1 where
-  -- I feel like there might be a cleaner way to do this that's still elegant but eh
-  foldl1 :: forall a. (a -> a -> a) -> Trivial1 a -> a
-  foldl1 f t = foldl f (head1 t) ::<*> tail1 t
+-- | Will loop infinitely if given an infinite `Unfoldable1` and a negative index.
+-- | Will not loop infinitely if given an infinite `Unfoldable1` and a nonnegative index;
+-- | computes the length for itself as it iterates. Iterates twice when resolving an out of
+-- | bounds index; does not store any intermediate results. In general, this function is
+-- | not supposed to be *used for modular indexing*, because modular indexing just happens
+-- | to be a simple and sensible way to guarantee an output, and there's no point in this
+-- | existing without a guaranteed output (just use `index`).
+-- | If you want modular indexing for the mod, please use an actual container.
+-- TODO: something that actually does collect the last n in one pass? either a function like this or a straight up newtype. actually no that's stupid because if you do a normal list it can just get GCed anyways :p or wait no it can't because no tail recursion modulo cons huh
+index1 :: forall a. Trivial1 a -> Int -> a
+index1 t i = untrivial1 eIndex1 t
+  where eIndex1 :: forall b. Generator1 a b -> b -> a
+        eIndex1 f seed = index1' 0 $ f seed
+          where index1' :: Int -> a /\ Maybe b -> a
+                index1' n (a /\ _)
+                  | n == i = a
+                index1' n (_ /\ Nothing) = index1 t $ mod i $ n + 1
+                index1' n (_ /\ Just b) = index1' (n + 1) $ f b
 
-  foldr1 f = foldr1Default f
-  foldMap1 f = foldMap1DefaultL f
+-- | `foldl1` specialized to `Trivial1`. "Re-fold" a polymorphic `Unfoldable1`.
+-- | Usually cleaner and more convenient than `turbofish`, when applicable.
+refoldl1 :: forall a. (a -> a -> a) -> Trivial1 a -> a
+refoldl1 = foldl1
 
--- | Guaranteed finite.
-instance trivialArbitrary :: (Arbitrary a, Coarbitrary a) => Arbitrary (Trivial1 a) where
-  arbitrary = sized \size -> do
-    (f :: a -> a /\ Maybe a) <- arbitrary 
-    seed <- arbitrary
-    pure $ unfoldr1 (uncurry \i b ->
-      f b <#> \b' ->
-        if i >= size
-        then Nothing
-        else ((i + 1) /\ _) <$> b'
-    ) $ 0 /\ seed
+-- | `foldr1` specialized to `Trivial1`. "Re-fold" a polymorphic `Unfoldable1`.
+-- | Usually cleaner and more convenient than `turbofish`, when applicable.
+refoldr1 :: forall a. (a -> a -> a) -> Trivial1 a -> a
+refoldr1 = foldr1
+
+-- | `foldMap` specialized to `Trivial1`. "Re-fold" a polymorphic `Unfoldable1`.
+-- | Usually cleaner and more convenient than `turbofish1`, when applicable.
+refoldMap1 :: forall a c. Semigroup c => (a -> c) -> Trivial1 a -> c
+refoldMap1 = foldMap1
+
+-- | `fold` specialized to `Trivial1`. "Re-fold" a polymorphic `Unfoldable1`.
+-- | Usually cleaner and more convenient than `turbofish1`, when applicable.
+refold1 :: forall a. Semigroup a => Trivial1 a -> a
+refold1 = fold1
+
+-- | Map each element of a `BoundedEnum` into a semigroup,
+-- | and combine the results through `refold1`.
+foldEnum :: forall a b. BoundedEnum a => Semigroup b => (a -> b) -> b
+foldEnum = flip foldMap1 ::<+> upFromIncluding bottom
+
+-- | Unfold an infinite `Unfoldable1`.
+-- | Analogous to `unfold1` and `unfold`, but with no way to signal termination;
+-- | `unfoldInf f b` consists of `fst $ f b` appended to `unfoldInf f $ snd $ f b`.
+-- |
+-- | This should only be used to produce either lazy types (like `Trivial`) or
+-- | types with truncating `Unfoldable1` instances (like `Maybe`).
+unfoldrInf :: forall a b u. Unfoldable1 u => (b -> a /\ b) -> b -> u a
+unfoldrInf = unfoldr1 <<< (map Just <<< _)
+
+-- | Create an infinite `Unfoldable1` by repeated application of a function to a seed value. 
+-- | Analogous to `iterateN`, but with no iteration limit.
+-- |
+-- | This should only be used to produce either lazy types (like `Trivial`) or
+-- | types with truncating `Unfoldable1` instances (like `Maybe`).
+iterate :: forall a u. Unfoldable1 u => (a -> a) -> a -> u a
+iterate f seed = unfoldr1 (map \a -> Just (f a /\ f a)) $ seed /\ seed

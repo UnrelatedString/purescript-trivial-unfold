@@ -4,7 +4,7 @@
 
 # purescript-trivial-unfold
 
-A simple library providing existential wrappers around transparently represented `unfoldr` and `unfoldr1` calls in `Data.Unfoldable.Trivial` and `Data.Unfoldable1.Trivial1`, and several utilities using them in `Data.Unfoldable.Trivial.Adapter` intended as adapters from functions in other libraries with polymorphic `Unfoldable a` or `Unfoldable1 a` result types such as `upFromIncluding` in `purescript-enums`.
+A simple library providing a number of utilities in `Data.Unfoldable.Trivial` implemented with existentially typed "trivial" wrappers around `unfoldr` and `unfoldr1` calls, intended as adapters from functions in other libraries with polymorphic `forall u. Unfoldable u => a` or `forall u. Unfoldable1 u => u a` result types such as `upFrom` in `purescript-enums`.
 
 ```purescript
 import Effect.Console (logShow)
@@ -16,8 +16,7 @@ import Data.Monoid (guard)
 import Data.Unfoldable (unfoldr1)
 import Data.Multiplicative (Multiplicative(..))
 
-import Data.Unfoldable.Trivial.Adapter (index, tail, refold1)
-import Data.Unfoldable.Trivial ((::<*>))
+import Data.Unfoldable.Trivial (index, drop, refold1, (::<*>))
 
 main = do
 
@@ -28,10 +27,11 @@ main = do
   -- Fold over a suffix of an Array without constructing a new Array for the suffix.
   -- The (::<*>) operator is ($) specialized to Trivial,
   -- to conveniently make instances decidable.
-  logShow $ intercalate " " ::<*> tail $ toUnfoldable [
-    "Never", "Gonna", "Give", "You", "Up"
+  -- (Note that this can also be accomplished with Data.List.Lazy.)
+  logShow $ intercalate " " ::<*> drop 2 $ toUnfoldable [
+    "I'm", "never", "gonna", "give", "you", "up"
   ]
-  -- > "Gonna Give You Up"
+  -- > "gonna give you up"
 
   -- Fold directly from a generating function.
   -- Basic folds are also provided specialized, with the "re-" prefix.
