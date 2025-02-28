@@ -24,7 +24,8 @@ main = do
   logShow $ index (upFromIncluding 'A') $ 32 + 25
   -- > Just 'z'
 
-  -- Fold over a suffix of an Array without constructing a new Array for the suffix.
+  -- Fold over a suffix of an Array without constructing a new Array for
+  -- the suffix.
   -- The (::<*>) operator is ($) specialized to Trivial,
   -- to conveniently make instances decidable.
   -- (Note that this can also be accomplished with Data.List.Lazy.)
@@ -35,7 +36,8 @@ main = do
 
   -- Fold directly from a generating function.
   -- Basic folds are also provided specialized, with the "re-" prefix.
-  logShow $ refold1 $ flip unfoldr1 1 \n -> Multiplicative n /\ (guard (n < 6) $> n + 1)
+  let fact n = Multiplicative n /\ (guard (n < 6) $> n + 1)
+  logShow $ refold1 $ unfoldr1 fact 1
   -- > Multiplicative 620
 ```
 
