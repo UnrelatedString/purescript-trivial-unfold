@@ -11,7 +11,6 @@ module Data.Unfoldable1.Trivial1
  , unfoldrInf
  , iterate
  , head1
- , tail1
  , last1
  , take1
  , index1
@@ -49,10 +48,6 @@ head1 :: forall a. Trivial1 a -> a
 head1 = untrivial1 eHead1
   where eHead1 :: forall b. Generator1 a b -> b -> a
         eHead1 f seed = fst $ f seed
-
--- | Removes the first element.
-tail1 :: forall a u. Unfoldable u => Trivial1 a -> u a
-tail1 = snd <<< uncons1
 
 -- | Returns the last element.
 last1 :: forall a. Trivial1 a -> a

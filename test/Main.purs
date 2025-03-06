@@ -31,7 +31,6 @@ import Data.Unfoldable1.Trivial1.Internal
 import Data.Unfoldable.Trivial
  ( head1
  , head
- , tail1
  , tail
  , index
  , foldEnum
@@ -112,9 +111,9 @@ buildSuite = suite "build" do
     quickCheck \(x :: Int) -> snoc none x === Just x
   test "build on singleton" do
     quickCheck \x (y :: Int) -> cons x (singleton y) === Just x
-    quickCheck \x (y :: Int) -> tail1 (cons x $ singleton y) === Just y
+    quickCheck \x (y :: Int) -> tail (cons x $ singleton y) === Just y
     quickCheck \x (y :: Int) -> snoc (singleton y) x === Just y
-    quickCheck \x (y :: Int) -> tail1 (snoc (singleton y) x) === Just x
+    quickCheck \x (y :: Int) -> tail (snoc (singleton y) x) === Just x
   test "build on Unfoldable1" do
     quickCheck \x (y :: Trivial1 Int) -> cons x (runTrivial1 y) === Just x
     quickCheck \x (y :: Trivial1 Int) -> head1 (snoc (runTrivial1 y) x) === head1 y
