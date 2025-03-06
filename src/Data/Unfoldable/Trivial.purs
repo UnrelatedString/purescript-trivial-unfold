@@ -6,6 +6,7 @@ module Data.Unfoldable.Trivial
  , head
  , tail
  , last
+ , init
  , take
  , cons
  , snoc
@@ -79,6 +80,12 @@ tail = maybe none snd <<< uncons
 -- | Returns the last element, if present.
 last :: forall a. Trivial a -> Maybe a
 last = map (un Last) <<< foldMap (Just <<< Last)
+
+-- | Removes the last element, if present.
+init :: forall a u. Unfoldable u => Trivial a -> u a
+init = untrivial eInit
+  where eInit :: forall b. Generator a b -> b -> u a
+        eInit f seed = unfoldr (map $ map f) $ f seed
 
 -- | Get the element at the specified 0-index, or `Nothing` if the index is out-of-bounds.
 -- |

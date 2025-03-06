@@ -34,6 +34,7 @@ import Data.Unfoldable.Trivial
  , tail
  , last1
  , last
+ , init
  , index
  , foldEnum
  , iterate
@@ -51,7 +52,7 @@ import Data.Unfoldable.Trivial
 
 import Data.Maybe (Maybe(..), isJust, isNothing)
 import Control.Alternative ((<|>), guard)
-import Data.Enum (class Enum, class BoundedEnum, succ, pred, upFrom, downFrom, upFromIncluding)
+import Data.Enum (class Enum, class BoundedEnum, succ, pred, upFrom, downFrom, upFromIncluding, enumFromTo)
 import Data.Tuple (snd)
 import Data.Tuple.Nested ((/\), type (/\))
 import Data.Semigroup.First (First(..))
@@ -105,6 +106,12 @@ smallSuite = suite "small stuff" do
   test "last tail gets last" do
     quickCheck \(x :: String) -> last (tail $ singleton x) === Nothing
     quickCheck \(x :: Trivial Int) -> last (tail x) === last x
+  test "last init gets second to last" do
+    quickCheck \(x :: String) -> last (init $ singleton x) === Nothing
+    quickCheck \(x :: Char) y -> last (init $ enumFromTo x y) === case compare x y of
+      LT -> pred y
+      GT -> succ y
+      EQ -> Nothing
   test "Maybe round trip" do
     quickCheck \(x :: Maybe Char) -> runTrivial (fromMaybe x) === x
   test "take <> drop" do
