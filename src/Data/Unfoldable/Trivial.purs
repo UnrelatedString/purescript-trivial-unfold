@@ -49,7 +49,7 @@ import Data.Unfoldable.Trivial.Internal (Trivial, Generator, untrivial, runTrivi
 import Data.Unfoldable(class Unfoldable, unfoldr, none)
 import Data.Unfoldable1 (class Unfoldable1, unfoldr1)
 import Data.Foldable (foldl, foldr, foldMap, fold)
-import Data.Maybe (Maybe(..), maybe)
+import Data.Maybe (Maybe(..), maybe, isNothing)
 import Data.Tuple (snd)
 import Data.Tuple.Nested ((/\), type (/\))
 
@@ -76,11 +76,10 @@ tail = maybe none snd <<< uncons
 -- | Get the element at the specified 0-index, or `Nothing` if the index is out-of-bounds.
 -- |
 -- | Time complexity: `O(n)` in the index (calls to the generating function).
--- | (Does not terminate early if it goes past the end!)
 index :: forall a. Trivial a -> Int -> Maybe a
 index t i
   | i < 0 = Nothing
-  | i == 0 = head t
+  | i == 0 || isNothing (head t) = head t
   | otherwise = index (tail t) (i - 1)
 
 -- | Keep only a number of elements from the start.
