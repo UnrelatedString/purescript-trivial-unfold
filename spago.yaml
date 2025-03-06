@@ -1,5 +1,6 @@
 package:
   dependencies:
+    - newtype: ">=5.0.0 <6.0.0"
     - bifunctors: ">=6.0.0 <7.0.0"
     - enums: ">=6.0.1 <7.0.0"
     - exists: ">=6.0.0 <7.0.0"
@@ -21,7 +22,7 @@ package:
   build:
     pedanticPackages: true
   publish:
-    version: 0.2.1
+    version: 0.3.0
     license: BSD-3-Clause
     location:
       gitUrl: https://git.gay/string/purescript-trivial-unfold.git

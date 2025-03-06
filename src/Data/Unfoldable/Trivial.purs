@@ -5,6 +5,8 @@ module Data.Unfoldable.Trivial
  ( module Reexports
  , head
  , tail
+ , last
+ , init
  , take
  , cons
  , snoc
@@ -37,7 +39,7 @@ import Data.Unfoldable1.Trivial1
  , unfoldrInf
  , iterate
  , head1
- , tail1
+ , last1
  , take1
  , index1
  ) as Reexports
@@ -49,9 +51,12 @@ import Data.Unfoldable.Trivial.Internal (Trivial, Generator, untrivial, runTrivi
 import Data.Unfoldable (class Unfoldable, unfoldr, none)
 import Data.Unfoldable1 (class Unfoldable1, unfoldr1)
 import Data.Foldable (foldl, foldr, foldMap, fold)
+import Data.Traversable (traverse)
 import Data.Maybe (Maybe(..), maybe)
 import Data.Tuple (snd)
 import Data.Tuple.Nested ((/\), type (/\))
+import Data.Newtype (un)
+import Data.Semigroup.Last (Last(..))
 
 -- | Returns the first element and a new `Unfoldable` generating the remaining elements,
 -- | or `Nothing` if there are no elements.
@@ -64,14 +69,24 @@ uncons = untrivial eUncons
 -- |
 -- | Not particularly useful, because this is just the `Unfoldable`
 -- | instance for `Maybe`. Included by analogy with `head1`.
--- AND because it took me like. MULTIPLE DAYS to realize this LMAO.
--- Polymorphic return types kinda mess with my head
 head :: forall a. Trivial a -> Maybe a
 head = runTrivial
 
 -- | Removes the first element, if present.
 tail :: forall a u. Unfoldable u => Trivial a -> u a
 tail = maybe none snd <<< uncons
+
+-- | Returns the last element, if present.
+last :: forall a. Trivial a -> Maybe a
+last = map (un Last) <<< foldMap (Just <<< Last)
+
+-- | Removes the last element, if present.
+init :: forall a u. Unfoldable u => Trivial a -> u a
+init = untrivial eInit
+  where eInit :: forall b. Generator a b -> b -> u a
+        eInit f seed = maybe none (unfoldr jumpTheGun) $ f seed
+          where jumpTheGun :: Generator a (a /\ b)
+                jumpTheGun = traverse f
 
 -- | Get the element at the specified 0-index, or `Nothing` if the index is out-of-bounds.
 -- |
