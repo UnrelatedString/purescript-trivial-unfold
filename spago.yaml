@@ -34,3 +34,5 @@ package:
 workspace:
   packageSet:
     registry: 63.3.0
+  buildOpts:
+    censorLibraryWarnings: all # *stares at test-unit*
