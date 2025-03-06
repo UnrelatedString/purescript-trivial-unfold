@@ -51,6 +51,7 @@ import Data.Unfoldable.Trivial.Internal (Trivial, Generator, untrivial, runTrivi
 import Data.Unfoldable (class Unfoldable, unfoldr, none)
 import Data.Unfoldable1 (class Unfoldable1, unfoldr1)
 import Data.Foldable (foldl, foldr, foldMap, fold)
+import Data.Traversable (sequence)
 import Data.Maybe (Maybe(..), maybe)
 import Data.Tuple (snd)
 import Data.Tuple.Nested ((/\), type (/\))
@@ -68,8 +69,6 @@ uncons = untrivial eUncons
 -- |
 -- | Not particularly useful, because this is just the `Unfoldable`
 -- | instance for `Maybe`. Included by analogy with `head1`.
--- AND because it took me like. MULTIPLE DAYS to realize this LMAO.
--- Polymorphic return types kinda mess with my head
 head :: forall a. Trivial a -> Maybe a
 head = runTrivial
 
@@ -85,7 +84,9 @@ last = map (un Last) <<< foldMap (Just <<< Last)
 init :: forall a u. Unfoldable u => Trivial a -> u a
 init = untrivial eInit
   where eInit :: forall b. Generator a b -> b -> u a
-        eInit f seed = unfoldr (map $ map f) $ f seed
+        eInit f seed = maybe none (unfoldr jumpTheGun) $ f seed
+          where jumpTheGun :: Generator a (a /\ b)
+                jumpTheGun (next /\ b) = (next /\ _) <$> f b -- I feel like I've written EXACTLY THIS BEFORE UGHHHHHHHH
 
 -- | Get the element at the specified 0-index, or `Nothing` if the index is out-of-bounds.
 -- |
