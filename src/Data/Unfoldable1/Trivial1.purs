@@ -12,6 +12,7 @@ module Data.Unfoldable1.Trivial1
  , iterate
  , head1
  , tail1
+ , last1
  , take1
  , index1
  ) where
@@ -40,6 +41,8 @@ import Data.Maybe (Maybe(..))
 import Data.Enum (class BoundedEnum, upFromIncluding)
 import Data.Tuple (fst, snd)
 import Data.Tuple.Nested ((/\), type (/\))
+import Data.Newtype (un)
+import Data.Semigroup.Last (Last(..))
 
 -- | Returns the first element.
 head1 :: forall a. Trivial1 a -> a
@@ -50,6 +53,10 @@ head1 = untrivial1 eHead1
 -- | Removes the first element.
 tail1 :: forall a u. Unfoldable u => Trivial1 a -> u a
 tail1 = snd <<< uncons1
+
+-- | Returns the last element.
+last1 :: forall a. Trivial1 a -> a
+last1 = un Last <<< foldMap1 Last
 
 -- | Keep only a strictly positive number of elements from the start.
 take1 :: forall a u. Unfoldable1 u => Int -> Trivial1 a -> u a

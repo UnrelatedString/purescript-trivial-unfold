@@ -5,6 +5,7 @@ module Data.Unfoldable.Trivial
  ( module Reexports
  , head
  , tail
+ , last
  , take
  , cons
  , snoc
@@ -52,6 +53,8 @@ import Data.Foldable (foldl, foldr, foldMap, fold)
 import Data.Maybe (Maybe(..), maybe)
 import Data.Tuple (snd)
 import Data.Tuple.Nested ((/\), type (/\))
+import Data.Newtype (un)
+import Data.Semigroup.Last (Last(..))
 
 -- | Returns the first element and a new `Unfoldable` generating the remaining elements,
 -- | or `Nothing` if there are no elements.
@@ -72,6 +75,10 @@ head = runTrivial
 -- | Removes the first element, if present.
 tail :: forall a u. Unfoldable u => Trivial a -> u a
 tail = maybe none snd <<< uncons
+
+-- | Returns the last element, if present.
+last :: forall a. Trivial a -> Maybe a
+last = map (un Last) <<< foldMap (Just <<< Last)
 
 -- | Get the element at the specified 0-index, or `Nothing` if the index is out-of-bounds.
 -- |
