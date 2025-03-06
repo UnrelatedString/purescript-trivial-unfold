@@ -27,6 +27,7 @@ main = do
   -- Fold over a suffix of an Array without constructing a new Array for
   -- the suffix.
   -- The (::<*>) operator is ($) specialized to Trivial,
+  -- and (::<+>) likewise for Trivial1,
   -- to conveniently make instances decidable.
   -- (Note that this can also be accomplished with Data.List.Lazy.)
   logShow $ intercalate " " ::<*> drop 2 $ toUnfoldable [
@@ -35,7 +36,9 @@ main = do
   -- > "gonna give you up"
 
   -- Fold directly from a generating function.
-  -- Basic folds are also provided specialized, with the "re-" prefix.
+  -- Basic folds are also provided specialized, with the "re-" prefix;
+  -- i.e. `refold1 $ unfoldr1 fact 1` is equivalent to
+  --      `fold1 ::<+> unfoldr1 fact 1`.
   let fact n = Multiplicative n /\ (guard (n < 6) $> n + 1)
   logShow $ refold1 $ unfoldr1 fact 1
   -- > Multiplicative 620
