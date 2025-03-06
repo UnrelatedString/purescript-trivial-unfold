@@ -52,7 +52,6 @@ import Data.Unfoldable.Trivial
 import Data.Maybe (Maybe(..), isJust, isNothing)
 import Control.Alternative ((<|>), guard)
 import Data.Enum (class Enum, class BoundedEnum, succ, pred, upFrom, downFrom, upFromIncluding)
-import Data.Bounded (top)
 import Data.Tuple (snd)
 import Data.Tuple.Nested ((/\), type (/\))
 import Data.Semigroup.First (First(..))
@@ -102,9 +101,10 @@ smallSuite = suite "small stuff" do
     Assert.assert "tail of none is still none" $ isNothing $ head $ tail none
     quickCheck \(x :: String) -> head (tail $ singleton x) === Nothing
     quickCheck \(x :: Char) -> head (tail $ upFrom x) === (succ =<< succ x)
+    quickCheck \(x :: Trivial Int) -> head (tail x) === index x 1
   test "last tail gets last" do
     quickCheck \(x :: String) -> last (tail $ singleton x) === Nothing
-    quickCheck \(x :: Char) -> last (tail $ upFrom x) === top
+    quickCheck \(x :: Trivial Int) -> last (tail x) === last x
   test "Maybe round trip" do
     quickCheck \(x :: Maybe Char) -> runTrivial (fromMaybe x) === x
   test "take <> drop" do
