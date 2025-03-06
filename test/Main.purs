@@ -105,7 +105,7 @@ smallSuite = suite "small stuff" do
     quickCheck \(x :: Trivial Int) -> head (tail x) === index x 1
   test "last tail gets last" do
     quickCheck \(x :: String) -> last (tail $ singleton x) === Nothing
-    quickCheck \(x :: Trivial Int) -> last (tail x) === last x
+    quickCheck \(x :: Trivial Int) -> last (tail x) === tail x *> last x
   test "last init gets second to last" do
     quickCheck \(x :: String) -> last (init $ singleton x) === Nothing
     quickCheck \(x :: Char) y -> last (init $ enumFromTo x y) === case compare x y of
