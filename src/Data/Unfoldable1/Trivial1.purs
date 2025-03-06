@@ -30,15 +30,13 @@ import Data.Unfoldable1.Trivial1.Internal
  , (::<+>)
  , untrivial1
  , Generator1
- , uncons1
  )
 
-import Data.Unfoldable (class Unfoldable)
 import Data.Unfoldable1 (class Unfoldable1, unfoldr1)
 import Data.Semigroup.Foldable (foldl1, foldr1, foldMap1, fold1)
 import Data.Maybe (Maybe(..))
 import Data.Enum (class BoundedEnum, upFromIncluding)
-import Data.Tuple (fst, snd)
+import Data.Tuple (fst)
 import Data.Tuple.Nested ((/\), type (/\))
 import Data.Newtype (un)
 import Data.Semigroup.Last (Last(..))

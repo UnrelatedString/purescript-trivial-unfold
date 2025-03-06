@@ -97,6 +97,10 @@ runTrivial = untrivial eRunTrivial
 -- | Allows folding polymorphic `Unfoldable`s as they generate.
 -- |
 -- | `foldr` uses a default implementation and may be inefficient.
+-- | Note also that this enables the use of `sequence_`
+-- | despite the lack of a `Traversable` instance, which is not provided because
+-- | it would require forcing and accumulating every value, at which point
+-- | any would-be user is better off with an actual container.
 instance trivialFoldable :: Foldable Trivial where
   foldl :: forall a c. (c -> a -> c) -> c -> Trivial a -> c
   foldl f foldInit = untrivial eFoldl

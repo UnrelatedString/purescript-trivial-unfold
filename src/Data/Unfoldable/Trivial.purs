@@ -51,7 +51,7 @@ import Data.Unfoldable.Trivial.Internal (Trivial, Generator, untrivial, runTrivi
 import Data.Unfoldable (class Unfoldable, unfoldr, none)
 import Data.Unfoldable1 (class Unfoldable1, unfoldr1)
 import Data.Foldable (foldl, foldr, foldMap, fold)
-import Data.Traversable (sequence)
+import Data.Traversable (traverse)
 import Data.Maybe (Maybe(..), maybe)
 import Data.Tuple (snd)
 import Data.Tuple.Nested ((/\), type (/\))
@@ -86,7 +86,7 @@ init = untrivial eInit
   where eInit :: forall b. Generator a b -> b -> u a
         eInit f seed = maybe none (unfoldr jumpTheGun) $ f seed
           where jumpTheGun :: Generator a (a /\ b)
-                jumpTheGun (next /\ b) = (next /\ _) <$> f b -- I feel like I've written EXACTLY THIS BEFORE UGHHHHHHHH
+                jumpTheGun = traverse f
 
 -- | Get the element at the specified 0-index, or `Nothing` if the index is out-of-bounds.
 -- |
