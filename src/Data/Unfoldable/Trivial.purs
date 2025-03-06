@@ -1,84 +1,64 @@
+-- | This "module" provides various adapters and other such utilities
+-- | for `Unfoldable1` and `Unfoldable`.
+
 module Data.Unfoldable.Trivial
- ( Trivial(..)
- , UnfoldrCall(..)
- , trivial
- , turbofish
- , (::<*>)
- , unfoldr1Default
- , uncons
+ ( module Reexports
  , head
  , tail
- , runTrivial
+ , take
  , cons
  , snoc
+ , uncons
+ , index
+ , drop
+ , refoldl
+ , refoldr
+ , refoldMap
+ , refold
  ) where
+
+import Data.Unfoldable.Trivial.Internal
+  ( unfoldr1Default
+  , trivial
+  , turbofish
+  , (::<*>)
+  ) as Reexports
+import Data.Unfoldable1.Trivial1
+ ( Trivial1
+ , trivial1
+ , turbofish1
+ , (::<+>)
+ , uncons1
+ , refoldl1
+ , refoldr1
+ , refoldMap1
+ , refold1
+ , foldEnum
+ , unfoldrInf
+ , iterate
+ , head1
+ , tail1
+ , take1
+ , index1
+ ) as Reexports
 
 import Prelude
 
-import Data.Foldable (class Foldable, foldrDefault, foldMapDefaultL)
-import Data.Unfoldable (class Unfoldable, class Unfoldable1, unfoldr, unfoldr1, none)
-import Data.Tuple (snd, uncurry)
-import Data.Tuple.Nested ((/\), type (/\))
+import Data.Unfoldable.Trivial.Internal (Trivial, Generator, untrivial, runTrivial)
+
+import Data.Unfoldable (class Unfoldable, unfoldr, none)
+import Data.Unfoldable1 (class Unfoldable1, unfoldr1)
+import Data.Foldable (foldl, foldr, foldMap, fold)
 import Data.Maybe (Maybe(..), maybe)
-import Data.Exists (Exists, mkExists, runExists)
-import Data.Newtype (class Newtype, unwrap)
-import Data.Bifunctor (lmap)
-import Test.QuickCheck.Arbitrary (class Arbitrary, class Coarbitrary, arbitrary)
-import Test.QuickCheck.Gen (sized)
-
--- | A constructor taking the same arguments as `unfoldr`.
-data UnfoldrCall a b = UnfoldrCall (b -> Maybe (a /\ b)) b
-
--- | A newtype wrapping `UnfoldrCall a b`, existentially quantified over the "seed" type `b`.
-newtype Trivial a = Trivial (Exists (UnfoldrCall a))
-derive instance Newtype (Trivial a) _
-
--- | Specializes its argument to `Trivial`.
-trivial :: forall a. Trivial a -> Trivial a
-trivial = identity
-
--- | Function application specialized to a `Trivial` argument,
--- | at the same precedence as `($)`.
--- |
--- | Inspired by the Rust syntax of the same name, often used in the
--- | analogous context of collecting from an iterator.
-turbofish :: forall a b. (Trivial a -> b) -> Trivial a -> b
-turbofish = identity
-
-infixr 0 turbofish as ::<*>
-
--- | Internal helper for implementing functions on Trivial.
-untrivial :: forall a c. (forall b. UnfoldrCall a b -> c) -> Trivial a -> c
-untrivial f = runExists f <<< unwrap
-
--- | Wraps both arguments to `unfoldr` in an `UnfoldrCall`.
-instance trivialUnfoldable :: Unfoldable Trivial where
-  unfoldr f seed = Trivial $ mkExists $ UnfoldrCall f seed
-
-instance trivialUnfoldable1 :: Unfoldable1 Trivial where
-  unfoldr1 = unfoldr1Default
-
-instance trivialFunctor :: Functor Trivial where
-  map :: forall a c. (a -> c) -> Trivial a -> Trivial c
-  map f = untrivial eMap
-    where eMap :: forall b. UnfoldrCall a b -> Trivial c
-          eMap (UnfoldrCall g seed) = Trivial
-                                    $ mkExists
-                                    $ UnfoldrCall (
-                                      map (lmap f) <<< g
-                                    ) seed
-
--- | Provides a default implementation of `unfoldr1` using `unfoldr` to satisfy
--- | the superclass bound on `Unfoldable`.
-unfoldr1Default :: forall a b t. Unfoldable t => (b -> a /\ Maybe b) -> b -> t a
-unfoldr1Default f = unfoldr (map f) <<< Just
+import Data.Tuple (snd)
+import Data.Tuple.Nested ((/\), type (/\))
 
 -- | Returns the first element and a new `Unfoldable` generating the remaining elements,
 -- | or `Nothing` if there are no elements.
 uncons :: forall a u. Unfoldable u => Trivial a -> Maybe (a /\ u a)
 uncons = untrivial eUncons
-  where eUncons :: forall b. UnfoldrCall a b -> Maybe (a /\ u a)
-        eUncons (UnfoldrCall f seed) = f seed <#> map (unfoldr f)
+  where eUncons :: forall b. Generator a b -> b -> Maybe (a /\ u a)
+        eUncons f seed = f seed <#> map (unfoldr f)
 
 -- | Returns the first element, if present.
 -- |
@@ -93,48 +73,65 @@ head = runTrivial
 tail :: forall a u. Unfoldable u => Trivial a -> u a
 tail = maybe none snd <<< uncons
 
--- | Converts to any other `Unfoldable`.
--- | Can also be seen as evaluating the inner `UnfoldrCall`.
-runTrivial :: forall a u. Unfoldable u => Trivial a -> u a
-runTrivial = untrivial eRunTrivial
-  where eRunTrivial :: forall b. UnfoldrCall a b -> u a
-        eRunTrivial (UnfoldrCall f seed) = unfoldr f seed
-
--- | The *raison d'être* for `Trivial`.
--- | Allows folding polymorphic `Unfoldable`s as they generate.
+-- | Get the element at the specified 0-index, or `Nothing` if the index is out-of-bounds.
 -- |
--- | `foldr` uses a default implementation and may be inefficient.
-instance trivialFoldable :: Foldable Trivial where
-  foldl :: forall a c. (c -> a -> c) -> c -> Trivial a -> c
-  foldl f foldInit = untrivial eFoldl
-    where eFoldl :: forall b. UnfoldrCall a b -> c
-          eFoldl (UnfoldrCall g unfoldSeed) = lockstep unfoldSeed foldInit
-            where lockstep :: b -> c -> c
-                  lockstep seed acc
-                    | Just (a /\ seed') <- g seed = lockstep seed' $ f acc a
-                    | otherwise = acc
+-- | Time complexity: `O(n)` in the index (calls to the generating function).
+index :: forall a. Trivial a -> Int -> Maybe a
+index t i
+  | i < 0 = Nothing
+  | i == 0 = head t
+  | Just (_ /\ rest) <- uncons t = index rest (i - 1)
+  | otherwise = Nothing
 
-  foldr f = foldrDefault f
-  foldMap f = foldMapDefaultL f
+-- | Keep only a number of elements from the start.
+take :: forall a u. Unfoldable u => Int -> Trivial a -> u a
+take n = untrivial eTake
+  where eTake :: forall b. Generator a b -> b -> u a
+        eTake f seed = unfoldr taker $ n /\ seed
+          where taker :: Generator a (Int /\ b)
+                taker (m /\ b)
+                  | m <= 0 = Nothing
+                  | otherwise = map ((/\) (m - 1)) <$> f b
 
--- | Guaranteed finite.
-instance trivialArbitrary :: (Arbitrary a, Coarbitrary a) => Arbitrary (Trivial a) where
-  arbitrary = sized \size -> do
-    (f :: a -> Maybe (a /\ a)) <- arbitrary 
-    seed <- arbitrary
-    pure $ unfoldr (uncurry \i b -> 
-      if i >= size
-      then Nothing
-      else map ((i + 1) /\ _) <$> f b
-    ) $ 0 /\ seed
+-- | Drop a number of elements from the start.
+-- Surprised the old version didn't tail call optimize but this is smarter/lazier anyways
+-- TODO: nicer kinda-maybe-lazier-feeling impl with compact when I add that
+drop :: forall a u. Unfoldable u => Int -> Trivial a -> u a
+drop n = untrivial eDrop 
+  where eDrop :: forall b. Generator a b -> b -> u a
+        eDrop f seed = unfoldr dropper $ n /\ seed
+          where dropper :: Generator a (Int /\ b)
+                dropper (m /\ b)
+                  | m <= 0 = map (m /\ _) <$> f b
+                  | otherwise = dropper =<< ((/\) (m - 1)) <$> snd <$> (f b)
+
+-- | `foldl` specialized to `Trivial`. "Re-fold" a polymorphic `Unfoldable`.
+-- | Usually cleaner and more convenient than `turbofish`, when applicable.
+refoldl :: forall a c. (c -> a -> c) -> c -> Trivial a -> c
+refoldl = foldl
+
+-- | `foldr` specialized to `Trivial`. "Re-fold" a polymorphic `Unfoldable`.
+-- | Usually cleaner and more convenient than `turbofish`, when applicable.
+refoldr :: forall a c. (a -> c -> c) -> c -> Trivial a -> c
+refoldr = foldr
+
+-- | `foldMap` specialized to `Trivial`. "Re-fold" a polymorphic `Unfoldable`.
+-- | Usually cleaner and more convenient than `turbofish`, when applicable.
+refoldMap :: forall a c. Monoid c => (a -> c) -> Trivial a -> c
+refoldMap = foldMap
+
+-- | `fold` specialized to `Trivial`. "Re-fold" a polymorphic `Unfoldable`.
+-- | Usually cleaner and more convenient than `turbofish`, when applicable.
+refold :: forall a. Monoid a => Trivial a -> a
+refold = fold
 
 -- | Prepend an element.
 -- |
 -- | Do not use this to create a data structure. Please use Data.List.Lazy instead.
 cons :: forall a u. Unfoldable1 u => a -> Trivial a -> u a
 cons h t = untrivial eCons t
-  where eCons :: forall b. UnfoldrCall a b -> u a
-        eCons (UnfoldrCall f seed) = unfoldr1 hilbertHotel $ h /\ seed
+  where eCons :: forall b. Generator a b -> b -> u a
+        eCons f seed = unfoldr1 hilbertHotel $ h /\ seed
           where hilbertHotel :: a /\ b -> a /\ Maybe (a /\ b)
                 hilbertHotel = map f
 
@@ -143,8 +140,8 @@ cons h t = untrivial eCons t
 -- | Do not use this to create a data structure. Please use Data.List.Lazy instead.
 snoc :: forall a u. Unfoldable1 u => Trivial a -> a -> u a
 snoc t l = untrivial eSnoc t
-  where eSnoc :: forall b. UnfoldrCall a b -> u a
-        eSnoc (UnfoldrCall f seed) = unfoldr1 failsafed seed
+  where eSnoc :: forall b. Generator a b -> b -> u a
+        eSnoc f seed = unfoldr1 failsafed seed
           where failsafed :: b -> a /\ Maybe b
                 failsafed b
                   | Just (a /\ b') <- f b = a /\ Just b'
