@@ -4,7 +4,7 @@ module Data.Unfoldable.MaybeEmpty
 
 import Prelude
 
-import Data.Newtype (class Newtype)
+import Data.Newtype (class Newtype, over)
 import Data.Maybe (Maybe(..))
 import Data.Tuple.Nested ((/\))
 import Data.Unfoldable
@@ -29,3 +29,6 @@ instance maybeEmptyUnfoldable :: Unfoldable1 f => Unfoldable (MaybeEmpty f) wher
   unfoldr f seed
     | Just (a /\ seed') <- f seed = MaybeEmpty $ Just $ cons a $ unfoldr f seed'
     | otherwise = MaybeEmpty Nothing
+
+instance maybeEmptyFunctor :: Functor f => Functor (MaybeEmpty f) where
+  map = over MaybeEmpty <<< map <<< map
