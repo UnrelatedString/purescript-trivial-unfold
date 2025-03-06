@@ -7,6 +7,7 @@ import Prelude
 import Data.Newtype (class Newtype, over)
 import Data.Maybe (Maybe(..))
 import Data.Tuple.Nested ((/\))
+import Control.Apply (lift2)
 import Data.Unfoldable
  ( class Unfoldable1
  , class Unfoldable
@@ -32,3 +33,9 @@ instance maybeEmptyUnfoldable :: Unfoldable1 f => Unfoldable (MaybeEmpty f) wher
 
 instance maybeEmptyFunctor :: Functor f => Functor (MaybeEmpty f) where
   map = over MaybeEmpty <<< map <<< map
+
+instance maybeEmptyApply :: Apply f => Apply (MaybeEmpty f) where
+  apply (MaybeEmpty f) (MaybeEmpty a) = MaybeEmpty $ lift2 apply f a
+
+instance maybeEmptyApplicative :: Applicative f => Applicative (MaybeEmpty f) where
+  pure = MaybeEmpty <<< pure <<< pure
