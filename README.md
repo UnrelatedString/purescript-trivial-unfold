@@ -4,7 +4,7 @@
 
 # purescript-trivial-unfold
 
-A simple library providing a number of utilities in `Data.Unfoldable.Trivial` implemented with existentially typed "trivial" wrappers around `unfoldr` and `unfoldr1` calls, intended as adapters from functions in other libraries with polymorphic `forall u. Unfoldable u => a` or `forall u. Unfoldable1 u => u a` result types such as `upFrom` in `purescript-enums`.
+A simple library providing a number of utilities for adapting from functions in other libraries with polymorphic `forall u. Unfoldable u => a` or `forall u. Unfoldable1 u => u a` result types such as `upFrom` in `purescript-enums`, implemented with existentially typed "trivial" wrappers around `unfoldr` and `unfoldr1` calls.
 
 ```purescript
 import Effect.Console (logShow)
