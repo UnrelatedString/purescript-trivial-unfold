@@ -46,10 +46,10 @@ import Prelude
 
 import Data.Unfoldable.Trivial.Internal (Trivial, Generator, untrivial, runTrivial)
 
-import Data.Unfoldable(class Unfoldable, unfoldr, none)
+import Data.Unfoldable (class Unfoldable, unfoldr, none)
 import Data.Unfoldable1 (class Unfoldable1, unfoldr1)
 import Data.Foldable (foldl, foldr, foldMap, fold)
-import Data.Maybe (Maybe(..), maybe, isNothing)
+import Data.Maybe (Maybe(..), maybe)
 import Data.Tuple (snd)
 import Data.Tuple.Nested ((/\), type (/\))
 
@@ -79,8 +79,9 @@ tail = maybe none snd <<< uncons
 index :: forall a. Trivial a -> Int -> Maybe a
 index t i
   | i < 0 = Nothing
-  | i == 0 || isNothing (head t) = head t
-  | otherwise = index (tail t) (i - 1)
+  | i == 0 = head t
+  | Just (_ /\ rest) <- uncons t = index rest (i - 1)
+  | otherwise = Nothing
 
 -- | Keep only a number of elements from the start.
 take :: forall a u. Unfoldable u => Int -> Trivial a -> u a
