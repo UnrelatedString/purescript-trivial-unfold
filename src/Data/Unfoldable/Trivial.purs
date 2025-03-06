@@ -38,7 +38,7 @@ import Data.Unfoldable1.Trivial1
  , unfoldrInf
  , iterate
  , head1
- , tail1
+ , last1
  , take1
  , index1
  ) as Reexports

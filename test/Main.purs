@@ -32,6 +32,8 @@ import Data.Unfoldable.Trivial
  ( head1
  , head
  , tail
+ , last1
+ , last
  , index
  , foldEnum
  , iterate
@@ -50,6 +52,7 @@ import Data.Unfoldable.Trivial
 import Data.Maybe (Maybe(..), isJust, isNothing)
 import Control.Alternative ((<|>), guard)
 import Data.Enum (class Enum, class BoundedEnum, succ, pred, upFrom, downFrom, upFromIncluding)
+import Data.Bounded (top)
 import Data.Tuple (snd)
 import Data.Tuple.Nested ((/\), type (/\))
 import Data.Semigroup.First (First(..))
@@ -78,12 +81,18 @@ smallSuite = suite "small stuff" do
   test "single uncons" do
     Assert.assert "none should be empty" $ isNothing $ map (map trivial) $ uncons none
     Assert.assert "singleton should be nonempty" $ isJust $ map (map trivial) $ uncons $ singleton unit
-  test "head" do
+  test "head is sane" do
     quickCheck \(x :: Int) -> head (singleton x) === Just x
     quickCheck \(x :: Int) -> head1 (singleton x) === x
     quickCheck \(x :: Maybe String) -> head (fromMaybe x) === x
     quickCheck \x -> head (replicate x "ehehe") === iff (x > 0) "ehehe"
     quickCheck \x (y :: Int) -> head (replicate1 x y) === Just y
+  test "last is sane" do
+    quickCheck \(x :: Int) -> last (singleton x) === Just x
+    quickCheck \(x :: Int) -> last1 (singleton x) === x
+    quickCheck \(x :: Maybe String) -> last (fromMaybe x) === x
+    quickCheck \x -> last (replicate x "ehehe") === iff (x > 0) "ehehe"
+    quickCheck \x (y :: Int) -> last (replicate1 x y) === Just y
   test "double uncons" do
     let double :: forall a. Trivial a -> Maybe (a /\ Maybe a)
         double = map (map head) <<< uncons
@@ -93,6 +102,9 @@ smallSuite = suite "small stuff" do
     Assert.assert "tail of none is still none" $ isNothing $ head $ tail none
     quickCheck \(x :: String) -> head (tail $ singleton x) === Nothing
     quickCheck \(x :: Char) -> head (tail $ upFrom x) === (succ =<< succ x)
+  test "last tail gets last" do
+    quickCheck \(x :: String) -> last (tail $ singleton x) === Nothing
+    quickCheck \(x :: Char) -> last (tail $ upFrom x) === top
   test "Maybe round trip" do
     quickCheck \(x :: Maybe Char) -> runTrivial (fromMaybe x) === x
   test "take <> drop" do
