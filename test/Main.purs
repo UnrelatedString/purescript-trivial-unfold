@@ -50,6 +50,10 @@ import Data.Unfoldable.Trivial
  , drop
 )
 
+import Data.Unfoldable.MaybeEmpty
+ ( MaybeEmpty(..)
+ )
+
 import Data.Maybe (Maybe(..), isJust, isNothing)
 import Control.Alternative ((<|>), guard)
 import Data.Enum (class Enum, class BoundedEnum, succ, pred, upFrom, downFrom, upFromIncluding, enumFromTo)
@@ -64,6 +68,11 @@ import Data.Semigroup.Foldable (foldl1, foldr1, foldMap1DefaultL, foldMap1Defaul
 import Type.Proxy (Proxy(..))
 import Data.Array (toUnfoldable)
 import Data.Monoid.Multiplicative (Multiplicative(..))
+import Data.Newtype (un)
+import Control.Extend (duplicate)
+import Data.List.NonEmpty as NEL
+
+-- incidentally I also just noticed that uhh. NonEmpty from Data.NonEmpty redefines fold*1 instead of having a Foldable1 instance?? uhhhh pr incoming myaybe
 
 iff :: forall a. Boolean -> a -> Maybe a
 iff = ($>) <<< guard
@@ -74,6 +83,7 @@ main = runTest do
   buildSuite
   foldSuite
   enumSuite
+  newtypesSuite
   exampleInTheReadmeTest
 
 smallSuite :: TestSuite
@@ -186,6 +196,15 @@ genericBoundedEnumSuite name p extras = genericEnumSuite name p $ (_ <> extras) 
   test "ends are in right order" do
     Assert.equal (First bottom) $ foldEnum (First :: a -> First a)
     Assert.equal (Last top) $ foldEnum (Last :: a -> Last a)
+
+newtypesSuite :: TestSuite
+newtypesSuite = suite "Newtypes" do
+  test "empty MaybeEmpty is Nothing" do
+    Assert.equal (Nothing :: Maybe (NEL.NonEmptyList Unit)) $ un MaybeEmpty none
+  test "MaybeEmpty Maybe Int agrees with Extend Maybe" do
+    quickCheck \(x :: Trivial Int) -> un MaybeEmpty (runTrivial x) === duplicate (runTrivial x)
+  test "NonEmptyList always roundtrips intact" do
+    quickCheck \(x :: NEL.NonEmptyList String) -> un MaybeEmpty (NEL.toUnfoldable x) === Just x
 
 -- because it would be ESPECIALLY embarrassing if this didn't work :P
 exampleInTheReadmeTest :: TestSuite

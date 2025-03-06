@@ -86,6 +86,7 @@
           "dependencies": [
             "aff",
             "control",
+            "lists",
             "pipes",
             "test-unit"
           ],
