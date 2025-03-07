@@ -10,8 +10,8 @@ import Data.Tuple.Nested ((/\))
 import Control.Apply (lift2)
 import Data.Functor.Invariant (class Invariant, imapF)
 import Data.Generic.Rep (class Generic)
-import Data.Eq (class Eq1)
-import Data.Ord (class Ord1)
+import Data.Eq (class Eq1, eq1)
+import Data.Ord (class Ord1, compare1)
 import Data.Traversable (class Traversable, traverse)
 import Test.QuickCheck.Arbitrary (class Arbitrary, class Coarbitrary)
 import Control.Alternative (class Alt, class Plus, class Alternative)
@@ -31,8 +31,6 @@ newtype MaybeEmpty f a = MaybeEmpty (Maybe (f a))
 
 derive instance Newtype (MaybeEmpty f a) _
 derive newtype instance Show (f a) => Show (MaybeEmpty f a)
-derive newtype instance Eq (f a) => Eq (MaybeEmpty f a)
-derive newtype instance Ord (f a) => Ord (MaybeEmpty f a)
 derive newtype instance Arbitrary (f a) => Arbitrary (MaybeEmpty f a)
 derive newtype instance Coarbitrary (f a) => Coarbitrary (MaybeEmpty f a)
 derive newtype instance Semigroup (f a) => Semigroup (MaybeEmpty f a)
@@ -40,8 +38,14 @@ derive newtype instance Semigroup (f a) => Monoid (MaybeEmpty f a)
 derive newtype instance Bounded (f a) => Bounded (MaybeEmpty f a)
 derive newtype instance Semiring (f a) => Semiring (MaybeEmpty f a)
 derive instance Generic (MaybeEmpty f a) _
--- derive instance Eq1 f => Eq1 (MaybeEmpty f)
--- derive instance Ord1 f => Ord1 (MaybeEmpty f)
+derive instance Eq1 f => Eq1 (MaybeEmpty f)
+derive instance Ord1 f => Ord1 (MaybeEmpty f)
+
+instance (Eq1 f, Eq a) => Eq (MaybeEmpty f a) where
+  eq = eq1
+
+instance (Ord1 f, Ord a) => Ord (MaybeEmpty f a) where
+  compare = compare1
 
 instance maybeEmptyUnfoldable1 :: Unfoldable1 f => Unfoldable1 (MaybeEmpty f) where
   unfoldr1 = (<<<) (MaybeEmpty <<< Just) <<< unfoldr1
