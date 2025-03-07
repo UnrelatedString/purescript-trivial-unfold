@@ -38,8 +38,8 @@ main = do
 
   -- Fold directly from a generating function.
   -- Basic folds are also provided specialized, with the "re-" prefix;
-  -- i.e. `refold1 $ unfoldr1 fact 1` is equivalent to
-  --      `fold1 ::<+> unfoldr1 fact 1`.
+  -- i.e. `refoldMap1 Multiplicative $ unfoldr1 fact 1` is equivalent to
+  --      `foldMap1 Multiplicative ::<+> unfoldr1 fact 1`.
   let fact n = n /\ (guard (n < 6) $> n + 1)
   logShow $ ala Multiplicative refoldMap1 $ unfoldr1 fact 1
   -- > 620
