@@ -17,6 +17,7 @@ module Data.Unfoldable.Trivial
  , refoldr
  , refoldMap
  , refold
+ , emptyIfNone
  ) where
 
 import Data.Unfoldable.Trivial.Internal
@@ -49,7 +50,7 @@ import Prelude
 import Data.Unfoldable.Trivial.Internal (Trivial, Generator, untrivial, runTrivial)
 
 import Data.Unfoldable (class Unfoldable, unfoldr, none)
-import Data.Unfoldable1 (class Unfoldable1, unfoldr1)
+import Data.Unfoldable1 (class Unfoldable1, unfoldr1, singleton)
 import Data.Foldable (foldl, foldr, foldMap, fold)
 import Data.Traversable (traverse)
 import Data.Maybe (Maybe(..), maybe)
@@ -57,6 +58,7 @@ import Data.Tuple (snd)
 import Data.Tuple.Nested ((/\), type (/\))
 import Data.Newtype (un)
 import Data.Semigroup.Last (Last(..))
+import Control.Alternative (class Alternative, empty)
 
 -- | Returns the first element and a new `Unfoldable` generating the remaining elements,
 -- | or `Nothing` if there are no elements.
@@ -161,3 +163,13 @@ snoc t l = untrivial eSnoc t
                 failsafed b
                   | Just (a /\ b') <- f b = a /\ Just b'
                   | otherwise = l /\ Nothing
+
+-- | Lift the elements of an `Unfoldable` into an `Alternative` (such as `Maybe`),
+-- | filling in a single `empty` if there are no elements.
+-- |
+-- | If you more generally want to augment an `Unfoldable1` with emptiness,
+-- | you almost certainly should use `MaybeEmpty` instead.
+emptyIfNone :: forall a f u. Alternative f => Unfoldable1 u => Trivial a -> u (f a)
+emptyIfNone t
+  | Just (a /\ r) <- uncons t = cons (pure a) $ pure <$> r
+  | otherwise = singleton empty

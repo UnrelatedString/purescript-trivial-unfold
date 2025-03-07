@@ -9,6 +9,9 @@
               "bifunctors": ">=6.0.0 <7.0.0"
             },
             {
+              "control": ">=6.0.0 <7.0.0"
+            },
+            {
               "enums": ">=6.0.1 <7.0.0"
             },
             {
@@ -16,6 +19,9 @@
             },
             {
               "foldable-traversable": ">=6.0.0 <7.0.0"
+            },
+            {
+              "invariant": ">=6.0.0 <7.0.0"
             },
             {
               "maybe": ">=6.0.0 <7.0.0"
@@ -85,7 +91,9 @@
         "test": {
           "dependencies": [
             "aff",
-            "control",
+            "distributive",
+            "identity",
+            "lists",
             "pipes",
             "test-unit"
           ],
@@ -150,7 +158,7 @@
     },
     "package_set": {
       "address": {
-        "registry": "63.2.1"
+        "registry": "63.3.0"
       },
       "compiler": ">=0.15.15 <0.16.0",
       "content": {
@@ -596,6 +604,7 @@
         "transformation-matrix": "1.0.1",
         "transformers": "6.1.0",
         "tree-rose": "4.0.2",
+        "trivial-unfold": "0.1.1",
         "ts-bridge": "4.0.0",
         "tuples": "7.0.0",
         "two-or-more": "1.0.0",

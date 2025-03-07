@@ -41,7 +41,6 @@ import Data.Unfoldable.Trivial
  , uncons
  , cons
  , snoc
- , refold1
  , refoldMap
  , refoldMap1
  , take
@@ -49,6 +48,12 @@ import Data.Unfoldable.Trivial
  , index1
  , drop
 )
+
+import Data.Unfoldable.MaybeEmpty
+ ( MaybeEmpty(..)
+ , distributeMaybesA
+ , toAlternative
+ )
 
 import Data.Maybe (Maybe(..), isJust, isNothing)
 import Control.Alternative ((<|>), guard)
@@ -64,6 +69,13 @@ import Data.Semigroup.Foldable (foldl1, foldr1, foldMap1DefaultL, foldMap1Defaul
 import Type.Proxy (Proxy(..))
 import Data.Array (toUnfoldable)
 import Data.Monoid.Multiplicative (Multiplicative(..))
+import Data.Newtype (un, ala)
+import Control.Extend (duplicate)
+import Data.Identity (Identity)
+import Data.Distributive (distribute)
+import Data.List.NonEmpty as NEL
+
+-- incidentally I also just noticed that uhh. NonEmpty from Data.NonEmpty redefines fold*1 instead of having a Foldable1 instance?? uhhhh pr incoming myaybe
 
 iff :: forall a. Boolean -> a -> Maybe a
 iff = ($>) <<< guard
@@ -74,6 +86,7 @@ main = runTest do
   buildSuite
   foldSuite
   enumSuite
+  newtypesSuite
   exampleInTheReadmeTest
 
 smallSuite :: TestSuite
@@ -187,13 +200,27 @@ genericBoundedEnumSuite name p extras = genericEnumSuite name p $ (_ <> extras) 
     Assert.equal (First bottom) $ foldEnum (First :: a -> First a)
     Assert.equal (Last top) $ foldEnum (Last :: a -> Last a)
 
+newtypesSuite :: TestSuite
+newtypesSuite = suite "Newtypes" do
+  test "empty MaybeEmpty is Nothing" do
+    Assert.equal (Nothing :: Maybe (NEL.NonEmptyList Unit)) $ un MaybeEmpty none
+  test "MaybeEmpty Maybe Int agrees with Extend Maybe" do
+    quickCheck \(x :: Trivial Int) -> un MaybeEmpty (runTrivial x) === duplicate (runTrivial x)
+  test "NonEmptyList always roundtrips intact" do
+    quickCheck \(x :: NEL.NonEmptyList String) -> un MaybeEmpty (NEL.toUnfoldable x) === Just x
+  test ("distributeMaybes would agree with Distributive Identity..." <>
+        "if Identity had an Unfoldable1 instance, which it just doesn't for some reason") do
+    quickCheck \(x :: Maybe (Identity Char)) -> distributeMaybesA (MaybeEmpty x) === distribute x
+  test "toAlternative agrees with Monad Array" do
+    quickCheck \(x :: Array Number) -> join (toAlternative $ toUnfoldable x) === x
+
 -- because it would be ESPECIALLY embarrassing if this didn't work :P
 exampleInTheReadmeTest :: TestSuite
 exampleInTheReadmeTest = test "Example in the README" $
   Pipes.runEffect $ exampleInTheReadme >-> do
     equals $ Just 'z'
     equals   "gonna give you up"
-    equals $ Multiplicative 720
+    equals   720
   where equals :: forall a. Show a => a -> Consumer_ String Aff Unit
         equals value = await >>= lift <<< Assert.equal (show value)
 
@@ -214,9 +241,10 @@ exampleInTheReadme = do
   import Data.Foldable (intercalate)
   import Data.Monoid (guard)
   import Data.Unfoldable (unfoldr1)
+  import Data.Newtype (ala)
   import Data.Multiplicative (Multiplicative(..))
 
-  import Data.Unfoldable.Trivial (index, drop, refold1, (::<*>))
+  import Data.Unfoldable.Trivial (index, drop, refoldMap1, (::<*>))
   -}
 
   -- main = do
@@ -240,6 +268,6 @@ exampleInTheReadme = do
   -- Basic folds are also provided specialized, with the "re-" prefix;
   -- i.e. `refold1 $ unfoldr1 fact 1` is equivalent to
   --      `fold1 ::<+> unfoldr1 fact 1`.
-  let fact n = Multiplicative n /\ (guard (n < 6) $> n + 1)
-  logShow $ refold1 $ unfoldr1 fact 1
-  -- > Multiplicative 620
+  let fact n = n /\ (guard (n < 6) $> n + 1)
+  logShow $ ala Multiplicative refoldMap1 $ unfoldr1 fact 1
+  -- > 620

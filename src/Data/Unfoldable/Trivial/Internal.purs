@@ -26,6 +26,7 @@ import Data.Tuple.Nested ((/\), type (/\))
 import Data.Maybe (Maybe(..))
 import Data.Exists (Exists, mkExists, runExists)
 import Data.Bifunctor (lmap)
+import Control.Lazy (class Lazy)
 import Test.QuickCheck.Arbitrary (class Arbitrary, class Coarbitrary, arbitrary)
 import Test.QuickCheck.Gen (sized)
 
@@ -124,3 +125,6 @@ instance trivialArbitrary :: (Arbitrary a, Coarbitrary a) => Arbitrary (Trivial 
       then Nothing
       else map ((i + 1) /\ _) <$> f b
     ) $ 0 /\ seed
+
+instance trivialLazy :: Lazy (Trivial a) where
+  defer = flip identity unit

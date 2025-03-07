@@ -4,7 +4,7 @@
 
 # purescript-trivial-unfold
 
-A simple library providing a number of utilities in `Data.Unfoldable.Trivial` implemented with existentially typed "trivial" wrappers around `unfoldr` and `unfoldr1` calls, intended as adapters from functions in other libraries with polymorphic `forall u. Unfoldable u => a` or `forall u. Unfoldable1 u => u a` result types such as `upFrom` in `purescript-enums`.
+A simple library providing a number of utilities for adapting from functions in other libraries with polymorphic `forall u. Unfoldable u => a` or `forall u. Unfoldable1 u => u a` result types such as `upFrom` in `purescript-enums`, implemented with existentially typed "trivial" wrappers around `unfoldr` and `unfoldr1` calls.
 
 ```purescript
 import Effect.Console (logShow)
@@ -14,9 +14,10 @@ import Data.Array (toUnfoldable)
 import Data.Foldable (intercalate)
 import Data.Monoid (guard)
 import Data.Unfoldable (unfoldr1)
+import Data.Newtype (ala)
 import Data.Multiplicative (Multiplicative(..))
 
-import Data.Unfoldable.Trivial (index, drop, refold1, (::<*>))
+import Data.Unfoldable.Trivial (index, drop, refoldMap1, (::<*>))
 
 main = do
 
@@ -39,9 +40,9 @@ main = do
   -- Basic folds are also provided specialized, with the "re-" prefix;
   -- i.e. `refold1 $ unfoldr1 fact 1` is equivalent to
   --      `fold1 ::<+> unfoldr1 fact 1`.
-  let fact n = Multiplicative n /\ (guard (n < 6) $> n + 1)
-  logShow $ refold1 $ unfoldr1 fact 1
-  -- > Multiplicative 620
+  let fact n = n /\ (guard (n < 6) $> n + 1)
+  logShow $ ala Multiplicative refoldMap1 $ unfoldr1 fact 1
+  -- > 620
 ```
 
 # Installation
