@@ -51,6 +51,8 @@ import Data.Unfoldable.Trivial
 
 import Data.Unfoldable.MaybeEmpty
  ( MaybeEmpty(..)
+ , distributeMaybesA
+ , toAlternative
  )
 
 import Data.Maybe (Maybe(..), isJust, isNothing)
@@ -69,6 +71,8 @@ import Data.Array (toUnfoldable)
 import Data.Monoid.Multiplicative (Multiplicative(..))
 import Data.Newtype (un, ala)
 import Control.Extend (duplicate)
+import Data.Identity (Identity)
+import Data.Distributive (distribute)
 import Data.List.NonEmpty as NEL
 
 -- incidentally I also just noticed that uhh. NonEmpty from Data.NonEmpty redefines fold*1 instead of having a Foldable1 instance?? uhhhh pr incoming myaybe
@@ -204,6 +208,9 @@ newtypesSuite = suite "Newtypes" do
     quickCheck \(x :: Trivial Int) -> un MaybeEmpty (runTrivial x) === duplicate (runTrivial x)
   test "NonEmptyList always roundtrips intact" do
     quickCheck \(x :: NEL.NonEmptyList String) -> un MaybeEmpty (NEL.toUnfoldable x) === Just x
+  test ("distributeMaybes would agree with Distributive Identity..." <>
+        "if Identity had an Unfoldable1 instance, which it just doesn't for some reason") do
+    quickCheck \(x :: Maybe (Identity Char)) -> distributeMaybesA (MaybeEmpty x) === distribute x
 
 -- because it would be ESPECIALLY embarrassing if this didn't work :P
 exampleInTheReadmeTest :: TestSuite

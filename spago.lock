@@ -91,6 +91,8 @@
         "test": {
           "dependencies": [
             "aff",
+            "distributive",
+            "identity",
             "lists",
             "pipes",
             "test-unit"

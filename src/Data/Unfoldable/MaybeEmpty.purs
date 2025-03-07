@@ -1,5 +1,7 @@
 module Data.Unfoldable.MaybeEmpty
  ( MaybeEmpty(..)
+ , maybeEmpty
+ , maybeEmpty'
  , distributeMaybes
  , distributeMaybesA
  , toAlternative
@@ -8,7 +10,7 @@ module Data.Unfoldable.MaybeEmpty
 import Prelude
 
 import Data.Newtype (class Newtype, over, over2, unwrap)
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe(..), maybe, maybe')
 import Data.Tuple.Nested ((/\))
 import Control.Apply (lift2)
 import Control.Comonad (class Extend, (=>>))
@@ -96,6 +98,14 @@ instance maybeEmptyAlternative :: (Applicative f, Alt f) => Alternative (MaybeEm
 instance maybeEmptyExtend :: Extend f => Extend (MaybeEmpty f) where
   extend f (MaybeEmpty (Just x)) = MaybeEmpty $ Just $ x =>> (f <<< MaybeEmpty <<< Just)
   extend _ (MaybeEmpty Nothing) = MaybeEmpty Nothing
+
+-- | Convenience wrapper for `maybe` on the inner `Maybe`. Can save an
+-- | `import Data.Newtype (un)` if this is all you need from Data.Unfoldable.MaybeEmpty.
+maybeEmpty :: forall f a b. b -> (f a -> b) -> MaybeEmpty f a -> b
+maybeEmpty d f = maybe d f <<< unwrap
+
+maybeEmpty' :: forall f a b. (Unit -> b) -> (f a -> b) -> MaybeEmpty f a -> b
+maybeEmpty' d f = maybe' d f <<< unwrap
 
 -- | Creates an `f` containing a single `Nothing` if empty.
 -- |
