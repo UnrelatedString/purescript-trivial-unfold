@@ -92,6 +92,7 @@
           "dependencies": [
             "aff",
             "distributive",
+            "exceptions",
             "identity",
             "lists",
             "pipes",

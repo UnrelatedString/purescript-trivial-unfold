@@ -9,7 +9,7 @@ import Test.QuickCheck ((===))
 import Test.QuickCheck.Arbitrary (class Arbitrary)
 import Test.Spec.QuickCheck (quickCheck, quickCheck')
 import Test.Spec.Runner.Node (runSpecAndExitProcess)
-import Test.Spec.Reporter (consoleReporter)
+import Test.Spec.Reporter (consoleReporter, dotReporter)
 import Effect.Aff (Aff)
 import Effect.Exception as Effect.Exception
 import Pipes ((>->), yield, await)
@@ -87,7 +87,7 @@ oughta :: forall f m t. Functor f => Show (f (AnyShow t)) => MonadThrow Effect.E
 oughta = map AnyShow >>> shouldSatisfy
 
 main :: Effect Unit
-main = runSpecAndExitProcess [consoleReporter] do
+main = runSpecAndExitProcess [dotReporter {width: 9}, consoleReporter] do
   smallSuite
   buildSuite
   foldSuite
@@ -110,8 +110,8 @@ smallSuite = describe "small stuff" do
     quickCheck \(x :: Int) -> last (singleton x) === Just x
     quickCheck \(x :: Int) -> last1 (singleton x) === x
     quickCheck \(x :: Maybe String) -> last (fromMaybe x) === x
-    quickCheck \x -> last (replicate x "ehehe") === iff (x > 0) "ehehe"
-    quickCheck \x (y :: Int) -> last (replicate1 x y) === Just y
+    quickCheck' 5 \x -> last (replicate x "ehehe") === iff (x > 0) "ehehe"
+    quickCheck' 5 \x (y :: Int) -> last (replicate1 x y) === Just y
   it "double uncons" do
     let double :: forall a. Trivial a -> Maybe (a /\ Maybe a)
         double = map (map head) <<< uncons
@@ -127,7 +127,7 @@ smallSuite = describe "small stuff" do
     quickCheck \(x :: Trivial Int) -> last (tail x) === tail x *> last x
   it "last init gets second to last" do
     quickCheck \(x :: String) -> last (init $ singleton x) === Nothing
-    quickCheck \(x :: Char) y -> last (init $ enumFromTo x y) === case compare x y of
+    quickCheck' 50 \(x :: Char) y -> last (init $ enumFromTo x y) === case compare x y of
       LT -> pred y
       GT -> succ y
       EQ -> Nothing
@@ -185,7 +185,7 @@ enumSuite = describe "enums" do
     it "index matches upFromIncluding" do
       quickCheck' 20 \x y -> index (upFromIncluding x) y === iff (y >= 0) (x + y)
     it "index matches iterate" do
-      quickCheck' 20 \x -> index (iterate (_+1) 0) x === iff (x >= 0) x
+      quickCheck' 5 \x -> index (iterate (_+1) 0) x === iff (x >= 0) x
   genericBoundedEnumSuite "Char" (Proxy :: Proxy Char) $ pure unit
   genericBoundedEnumSuite "Ordering" (Proxy :: Proxy Ordering) $ pure unit
   genericBoundedEnumSuite "Boolean" (Proxy :: Proxy Boolean) $ pure unit

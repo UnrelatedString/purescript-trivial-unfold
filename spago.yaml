@@ -20,6 +20,7 @@ package:
       - spec
       - spec-quickcheck
       - spec-node
+      - exceptions
       - aff
       - pipes
       - lists
