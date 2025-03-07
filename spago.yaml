@@ -17,7 +17,9 @@ package:
   test:
     main: Test.Main
     dependencies:
-      - test-unit
+      - spec
+      - spec-quickcheck
+      - spec-node
       - aff
       - pipes
       - lists
@@ -38,5 +40,3 @@ package:
 workspace:
   packageSet:
     registry: 63.3.0
-  buildOpts:
-    censorLibraryWarnings: all # *stares at test-unit*
