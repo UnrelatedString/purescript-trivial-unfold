@@ -8,6 +8,7 @@ import Data.Newtype (class Newtype, over, over2, unwrap)
 import Data.Maybe (Maybe(..))
 import Data.Tuple.Nested ((/\))
 import Control.Apply (lift2)
+import Control.Comonad (class Extend, (=>>))
 import Data.Functor.Invariant (class Invariant, imapF)
 import Data.Generic.Rep (class Generic)
 import Data.Eq (class Eq1, eq1)
@@ -81,9 +82,13 @@ instance maybeEmptyAlt :: Alt f => Alt (MaybeEmpty f) where
   alt (MaybeEmpty (Just a)) (MaybeEmpty (Just b)) = MaybeEmpty $ Just $ a <|> b
   alt a b = over2 MaybeEmpty (<|>) a b
   
--- | `empty` wraps `Nothing`. Does not use `Plus f` if it exists--and given that
+-- | `empty = none`. Does not use `Plus f` if it exists--and given that
 -- | this is all about wrapping guaranteed non-empty containers, it probably doesn't.
 instance maybeEmptyPlus :: Alt f => Plus (MaybeEmpty f) where
   empty = MaybeEmpty Nothing
 
-instance alternativePlus :: (Applicative f, Alt f) => Alternative (MaybeEmpty f)
+instance maybeEmptyAlternative :: (Applicative f, Alt f) => Alternative (MaybeEmpty f)
+
+instance maybeEmptyExtend :: Extend f => Extend (MaybeEmpty f) where
+  extend f (MaybeEmpty (Just x)) = MaybeEmpty $ Just $ x =>> (f <<< MaybeEmpty <<< Just)
+  extend _ (MaybeEmpty Nothing) = MaybeEmpty Nothing
