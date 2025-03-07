@@ -28,6 +28,7 @@ import Data.Tuple.Nested ((/\), type (/\))
 import Data.Maybe (Maybe(..), maybe)
 import Data.Exists (Exists, mkExists, runExists)
 import Data.Bifunctor (lmap)
+import Control.Lazy (class Lazy)
 import Test.QuickCheck.Arbitrary (class Arbitrary, class Coarbitrary, arbitrary)
 import Test.QuickCheck.Gen (sized)
 
@@ -124,7 +125,7 @@ instance trivial1Foldable1 :: Foldable1 Trivial1 where
   foldMap1 f = foldMap1DefaultL f
 
 -- | Guaranteed finite.
-instance trivialArbitrary :: (Arbitrary a, Coarbitrary a) => Arbitrary (Trivial1 a) where
+instance trivial1Arbitrary :: (Arbitrary a, Coarbitrary a) => Arbitrary (Trivial1 a) where
   arbitrary = sized \size -> do
     (f :: a -> a /\ Maybe a) <- arbitrary 
     seed <- arbitrary
@@ -134,3 +135,6 @@ instance trivialArbitrary :: (Arbitrary a, Coarbitrary a) => Arbitrary (Trivial1
         then Nothing
         else ((i + 1) /\ _) <$> b'
     ) $ 0 /\ seed
+
+instance trivial1Lazy :: Lazy (Trivial1 a) where
+  defer = flip identity unit
