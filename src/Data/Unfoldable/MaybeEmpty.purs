@@ -4,12 +4,14 @@ module Data.Unfoldable.MaybeEmpty
 
 import Prelude
 
-import Data.Newtype (class Newtype, over, unwrap)
+import Data.Newtype (class Newtype, over, over2, unwrap)
 import Data.Maybe (Maybe(..))
 import Data.Tuple.Nested ((/\))
 import Control.Apply (lift2)
 import Data.Functor.Invariant (class Invariant, imapF)
 import Data.Generic.Rep (class Generic)
+import Data.Eq (class Eq1, eq1)
+import Data.Ord (class Ord1, compare1)
 import Data.Traversable (class Traversable, traverse)
 import Test.QuickCheck.Arbitrary (class Arbitrary, class Coarbitrary)
 import Control.Alternative (class Alt, class Plus, class Alternative)
@@ -35,9 +37,16 @@ derive newtype instance Semigroup (f a) => Semigroup (MaybeEmpty f a)
 derive newtype instance Semigroup (f a) => Monoid (MaybeEmpty f a)
 derive newtype instance Bounded (f a) => Bounded (MaybeEmpty f a)
 derive newtype instance Semiring (f a) => Semiring (MaybeEmpty f a)
-derive newtype instance Eq (f a) => Eq (MaybeEmpty f a)
-derive newtype instance Ord (f a) => Ord (MaybeEmpty f a)
 derive instance Generic (MaybeEmpty f a) _
+derive instance Eq1 f => Eq1 (MaybeEmpty f)
+derive instance Ord1 f => Ord1 (MaybeEmpty f)
+
+instance (Eq1 f, Eq a) => Eq (MaybeEmpty f a) where
+  eq (MaybeEmpty Nothing) (MaybeEmpty Nothing) = true
+  eq (MaybeEmpty x) (MaybeEmpty y) = (eq1 <$> x <*> y) == Just true
+
+instance (Ord1 f, Ord a) => Ord (MaybeEmpty f a) where
+  compare = compare1
 
 instance maybeEmptyUnfoldable1 :: Unfoldable1 f => Unfoldable1 (MaybeEmpty f) where
   unfoldr1 = (<<<) (MaybeEmpty <<< Just) <<< unfoldr1
