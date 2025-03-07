@@ -211,6 +211,8 @@ newtypesSuite = suite "Newtypes" do
   test ("distributeMaybes would agree with Distributive Identity..." <>
         "if Identity had an Unfoldable1 instance, which it just doesn't for some reason") do
     quickCheck \(x :: Maybe (Identity Char)) -> distributeMaybesA (MaybeEmpty x) === distribute x
+  test "toAlternative agrees with Monad Array" do
+    quickCheck \(x :: Array Number) -> join (toAlternative $ toUnfoldable x) === x
 
 -- because it would be ESPECIALLY embarrassing if this didn't work :P
 exampleInTheReadmeTest :: TestSuite
