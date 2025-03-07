@@ -9,6 +9,9 @@
               "bifunctors": ">=6.0.0 <7.0.0"
             },
             {
+              "control": ">=6.0.0 <7.0.0"
+            },
+            {
               "enums": ">=6.0.1 <7.0.0"
             },
             {
@@ -16,6 +19,9 @@
             },
             {
               "foldable-traversable": ">=6.0.0 <7.0.0"
+            },
+            {
+              "invariant": ">=6.0.0 <7.0.0"
             },
             {
               "maybe": ">=6.0.0 <7.0.0"
@@ -85,7 +91,6 @@
         "test": {
           "dependencies": [
             "aff",
-            "control",
             "lists",
             "pipes",
             "test-unit"
