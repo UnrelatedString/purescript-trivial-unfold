@@ -14,7 +14,7 @@ import Data.Eq (class Eq1, eq1)
 import Data.Ord (class Ord1, compare1)
 import Data.Traversable (class Traversable, traverse)
 import Test.QuickCheck.Arbitrary (class Arbitrary, class Coarbitrary)
-import Control.Alternative (class Alt, class Plus, class Alternative)
+import Control.Alternative (class Alt, class Plus, class Alternative, (<|>))
 import Data.Unfoldable
  ( class Unfoldable1
  , class Unfoldable
@@ -72,3 +72,18 @@ instance maybeEmptyMonad :: (Applicative f, Bind f, Traversable f) => Monad (May
 
 instance maybeEmptyInvariant :: Functor f => Invariant (MaybeEmpty f) where
   imap = imapF
+
+-- | Composes `Alt Maybe` with `Alt f`.
+-- | This does not seem likely to be particularly useful, but then again, what does?
+-- |
+-- | If you just want the first nonempty `MaybeEmpty f a`, `unwrap` it to `Maybe (f a)`.
+instance maybeEmptyAlt :: Alt f => Alt (MaybeEmpty f) where
+  alt (MaybeEmpty (Just a)) (MaybeEmpty (Just b)) = MaybeEmpty $ Just $ a <|> b
+  alt a b = over2 MaybeEmpty (<|>) a b
+  
+-- | `empty` wraps `Nothing`. Does not use `Plus f` if it exists--and given that
+-- | this is all about wrapping guaranteed non-empty containers, it probably doesn't.
+instance maybeEmptyPlus :: Alt f => Plus (MaybeEmpty f) where
+  empty = MaybeEmpty Nothing
+
+instance alternativePlus :: (Applicative f, Alt f) => Alternative (MaybeEmpty f)
