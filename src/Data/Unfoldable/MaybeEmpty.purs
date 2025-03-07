@@ -1,5 +1,8 @@
 module Data.Unfoldable.MaybeEmpty
  ( MaybeEmpty(..)
+ , distributeMaybes
+ , distributeMaybesA
+ , toAlternative
  ) where
 
 import Prelude
@@ -15,12 +18,13 @@ import Data.Eq (class Eq1, eq1)
 import Data.Ord (class Ord1, compare1)
 import Data.Traversable (class Traversable, traverse)
 import Test.QuickCheck.Arbitrary (class Arbitrary, class Coarbitrary)
-import Control.Alternative (class Alt, class Plus, class Alternative, (<|>))
+import Control.Alternative (class Alt, class Plus, class Alternative, (<|>), empty)
 import Data.Unfoldable
  ( class Unfoldable1
  , class Unfoldable
  , unfoldr1
  , unfoldr
+ , singleton
  )
 import Data.Unfoldable.Trivial (cons)
 
@@ -92,3 +96,23 @@ instance maybeEmptyAlternative :: (Applicative f, Alt f) => Alternative (MaybeEm
 instance maybeEmptyExtend :: Extend f => Extend (MaybeEmpty f) where
   extend f (MaybeEmpty (Just x)) = MaybeEmpty $ Just $ x =>> (f <<< MaybeEmpty <<< Just)
   extend _ (MaybeEmpty Nothing) = MaybeEmpty Nothing
+
+-- | Creates an `f` containing a single `Nothing` if empty.
+-- |
+-- | Although Data.Unfoldable calls them "unfoldable functors", `Functor` isn't actually
+-- | a superclass of `Unfoldable1`. On the off chance that you for some reason do in fact
+-- | have an `Unfoldable1` type which is not a `Functor` but also want to use this,
+-- | consider `emptyIfNone` from `Data.Unfoldable.Trivial` instead.
+distributeMaybes :: forall f a. Unfoldable1 f => Functor f => MaybeEmpty f a -> f (Maybe a)
+distributeMaybes (MaybeEmpty (Just x)) = Just <$> x
+distributeMaybes (MaybeEmpty Nothing) = singleton Nothing
+
+-- | Creates an `f` containing `Nothing` if empty, using `pure` instead of `singleton`.
+distributeMaybesA :: forall f a. Applicative f => MaybeEmpty f a -> f (Maybe a)
+distributeMaybesA (MaybeEmpty (Just x)) = Just <$> x
+distributeMaybesA (MaybeEmpty Nothing) = pure Nothing
+
+-- | Unwraps and convert the inner `Maybe` into an alternative `Alternative`. (ba dum tss)
+toAlternative :: forall u f a. Alternative f => MaybeEmpty u a -> f (u a)
+toAlternative (MaybeEmpty (Just x)) = pure x
+toAlternative (MaybeEmpty Nothing) = empty
