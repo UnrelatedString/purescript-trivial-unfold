@@ -52,7 +52,6 @@ import Data.Unfoldable.Trivial
 import Data.Unfoldable.MaybeEmpty
  ( MaybeEmpty(..)
  , distributeMaybesA
- , toAlternative
  )
 
 import Data.Maybe (Maybe(..), isJust, isNothing)
