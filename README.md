@@ -14,9 +14,10 @@ import Data.Array (toUnfoldable)
 import Data.Foldable (intercalate)
 import Data.Monoid (guard)
 import Data.Unfoldable (unfoldr1)
+import Data.Newtype (ala)
 import Data.Multiplicative (Multiplicative(..))
 
-import Data.Unfoldable.Trivial (index, drop, refold1, (::<*>))
+import Data.Unfoldable.Trivial (index, drop, refoldMap1, (::<*>))
 
 main = do
 
@@ -39,9 +40,9 @@ main = do
   -- Basic folds are also provided specialized, with the "re-" prefix;
   -- i.e. `refold1 $ unfoldr1 fact 1` is equivalent to
   --      `fold1 ::<+> unfoldr1 fact 1`.
-  let fact n = Multiplicative n /\ (guard (n < 6) $> n + 1)
-  logShow $ refold1 $ unfoldr1 fact 1
-  -- > Multiplicative 620
+  let fact n = n /\ (guard (n < 6) $> n + 1)
+  logShow $ ala Multiplicative refoldMap1 $ unfoldr1 fact 1
+  -- > 620
 ```
 
 # Installation

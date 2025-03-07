@@ -41,7 +41,6 @@ import Data.Unfoldable.Trivial
  , uncons
  , cons
  , snoc
- , refold1
  , refoldMap
  , refoldMap1
  , take
@@ -68,7 +67,7 @@ import Data.Semigroup.Foldable (foldl1, foldr1, foldMap1DefaultL, foldMap1Defaul
 import Type.Proxy (Proxy(..))
 import Data.Array (toUnfoldable)
 import Data.Monoid.Multiplicative (Multiplicative(..))
-import Data.Newtype (un)
+import Data.Newtype (un, ala)
 import Control.Extend (duplicate)
 import Data.List.NonEmpty as NEL
 
@@ -212,7 +211,7 @@ exampleInTheReadmeTest = test "Example in the README" $
   Pipes.runEffect $ exampleInTheReadme >-> do
     equals $ Just 'z'
     equals   "gonna give you up"
-    equals $ Multiplicative 720
+    equals   720
   where equals :: forall a. Show a => a -> Consumer_ String Aff Unit
         equals value = await >>= lift <<< Assert.equal (show value)
 
@@ -233,9 +232,10 @@ exampleInTheReadme = do
   import Data.Foldable (intercalate)
   import Data.Monoid (guard)
   import Data.Unfoldable (unfoldr1)
+  import Data.Newtype (ala)
   import Data.Multiplicative (Multiplicative(..))
 
-  import Data.Unfoldable.Trivial (index, drop, refold1, (::<*>))
+  import Data.Unfoldable.Trivial (index, drop, refoldMap1, (::<*>))
   -}
 
   -- main = do
@@ -259,6 +259,6 @@ exampleInTheReadme = do
   -- Basic folds are also provided specialized, with the "re-" prefix;
   -- i.e. `refold1 $ unfoldr1 fact 1` is equivalent to
   --      `fold1 ::<+> unfoldr1 fact 1`.
-  let fact n = Multiplicative n /\ (guard (n < 6) $> n + 1)
-  logShow $ refold1 $ unfoldr1 fact 1
-  -- > Multiplicative 620
+  let fact n = n /\ (guard (n < 6) $> n + 1)
+  logShow $ ala Multiplicative refoldMap1 $ unfoldr1 fact 1
+  -- > 620
