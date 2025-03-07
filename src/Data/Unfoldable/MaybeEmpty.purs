@@ -112,7 +112,7 @@ distributeMaybesA :: forall f a. Applicative f => MaybeEmpty f a -> f (Maybe a)
 distributeMaybesA (MaybeEmpty (Just x)) = Just <$> x
 distributeMaybesA (MaybeEmpty Nothing) = pure Nothing
 
--- | Unwraps and convert the inner `Maybe` into an alternative `Alternative`. (ba dum tss)
+-- | Unwraps and converts the inner `Maybe` into an alternative `Alternative`. *(ba dum tss)*
 toAlternative :: forall u f a. Alternative f => MaybeEmpty u a -> f (u a)
 toAlternative (MaybeEmpty (Just x)) = pure x
 toAlternative (MaybeEmpty Nothing) = empty

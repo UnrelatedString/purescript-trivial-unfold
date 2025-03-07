@@ -21,6 +21,8 @@ package:
       - aff
       - pipes
       - lists
+      - distributive
+      - identity
   build:
     pedanticPackages: true
   publish:
