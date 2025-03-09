@@ -78,8 +78,6 @@ import Data.Identity (Identity)
 import Data.Distributive (distribute)
 import Data.List.NonEmpty as NEL
 
--- incidentally I also just noticed that uhh. NonEmpty from Data.NonEmpty redefines fold*1 instead of having a Foldable1 instance?? uhhhh pr incoming myaybe
-
 iff :: forall a. Boolean -> a -> Maybe a
 iff = ($>) <<< guard
 
