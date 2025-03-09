@@ -95,6 +95,7 @@
             "exceptions",
             "identity",
             "lists",
+            "my-spec-reporter",
             "pipes",
             "spec",
             "spec-node",
@@ -139,6 +140,7 @@
             "lists",
             "maybe",
             "mmorph",
+            "my-spec-reporter",
             "newtype",
             "node-buffer",
             "node-event-emitter",
@@ -172,6 +174,7 @@
             "strings",
             "tailrec",
             "transformers",
+            "trivial-unfold",
             "tuples",
             "type-equality",
             "typelevel-prelude",
@@ -709,7 +712,12 @@
         "zipperarray": "2.0.0"
       }
     },
-    "extra_packages": {}
+    "extra_packages": {
+      "my-spec-reporter": {
+        "git": "https://github.com/UnrelatedString/my-spec-reporter.git",
+        "ref": "main"
+      }
+    }
   },
   "packages": {
     "aff": {
@@ -1217,6 +1225,24 @@
         "free",
         "functors",
         "transformers"
+      ]
+    },
+    "my-spec-reporter": {
+      "type": "git",
+      "url": "https://github.com/UnrelatedString/my-spec-reporter.git",
+      "rev": "f0a814cc77e65c00d412e7002e0c3b2c7e6e48f8",
+      "dependencies": [
+        "aff",
+        "ansi",
+        "console",
+        "datetime",
+        "effect",
+        "lists",
+        "prelude",
+        "spec",
+        "spec-node",
+        "trivial-unfold",
+        "unfoldable"
       ]
     },
     "newtype": {

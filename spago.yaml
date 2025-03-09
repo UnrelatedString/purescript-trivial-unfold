@@ -26,6 +26,7 @@ package:
       - lists
       - distributive
       - identity
+      - my-spec-reporter
   build:
     pedanticPackages: true
   publish:
@@ -41,3 +42,7 @@ package:
 workspace:
   packageSet:
     registry: 63.3.0
+  extraPackages:
+    my-spec-reporter:
+      git: https://github.com/UnrelatedString/my-spec-reporter.git
+      ref: main

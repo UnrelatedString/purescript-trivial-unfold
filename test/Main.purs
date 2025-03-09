@@ -9,7 +9,7 @@ import Test.QuickCheck ((===))
 import Test.QuickCheck.Arbitrary (class Arbitrary)
 import Test.Spec.QuickCheck (quickCheck, quickCheck')
 import Test.Spec.Runner.Node (runSpecAndExitProcess)
-import Test.Spec.Reporter (specReporter)
+import Test.Spec.Reporter.June.Pretty (prettyReporter)
 import Effect.Aff (Aff)
 import Effect.Exception as Effect.Exception
 import Pipes ((>->), yield, await)
@@ -87,7 +87,7 @@ oughta :: forall f m t. Functor f => Show (f (AnyShow t)) => MonadThrow Effect.E
 oughta = map AnyShow >>> shouldSatisfy
 
 main :: Effect Unit
-main = runSpecAndExitProcess [specReporter] do
+main = runSpecAndExitProcess [prettyReporter] do
   smallSuite
   buildSuite
   foldSuite
