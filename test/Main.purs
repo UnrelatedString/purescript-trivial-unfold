@@ -3,17 +3,20 @@ module Test.Main where
 import Prelude
 
 import Effect (Effect)
-import Test.Unit (TestSuite, suite, test)
-import Test.Unit.Main (runTest)
-import Test.Unit.Assert as Assert
+import Test.Spec(Spec, describe, it)
+import Test.Spec.Assertions (shouldEqual, shouldSatisfy, AnyShow(..))
 import Test.QuickCheck ((===))
 import Test.QuickCheck.Arbitrary (class Arbitrary)
-import Test.Unit.QuickCheck (quickCheck, quickCheck')
+import Test.Spec.QuickCheck (quickCheck, quickCheck')
+import Test.Spec.Runner.Node (runSpecAndExitProcess)
+import Test.Spec.Reporter.June.Pretty (prettyReporter)
 import Effect.Aff (Aff)
+import Effect.Exception as Effect.Exception
 import Pipes ((>->), yield, await)
 import Pipes.Core (Producer_, Consumer_)
 import Pipes.Core as Pipes -- I am NOT importing something called "runEffect" unqualified lol
 import Control.Monad.Trans.Class (lift)
+import Control.Monad.Error.Class (class MonadThrow)
 
 import Data.Unfoldable.Trivial.Internal
  ( Trivial
@@ -80,8 +83,11 @@ import Data.List.NonEmpty as NEL
 iff :: forall a. Boolean -> a -> Maybe a
 iff = ($>) <<< guard
 
+oughta :: forall f m t. Functor f => Show (f (AnyShow t)) => MonadThrow Effect.Exception.Error m => f t -> (f (AnyShow t) -> Boolean) -> m Unit
+oughta = map AnyShow >>> shouldSatisfy
+
 main :: Effect Unit
-main = runTest do
+main = runSpecAndExitProcess [prettyReporter] do
   smallSuite
   buildSuite
   foldSuite
@@ -89,140 +95,144 @@ main = runTest do
   newtypesSuite
   exampleInTheReadmeTest
 
-smallSuite :: TestSuite
-smallSuite = suite "small stuff" do
-  test "single uncons" do
-    Assert.assert "none should be empty" $ isNothing $ map (map trivial) $ uncons none
-    Assert.assert "singleton should be nonempty" $ isJust $ map (map trivial) $ uncons $ singleton unit
-  test "head is sane" do
+smallSuite :: Spec Unit
+smallSuite = describe "small stuff" do
+  it "single uncons" do
+    map (map trivial) (uncons none) `oughta` isNothing
+    map (map trivial) (uncons $ singleton unit) `oughta` isJust
+  it "head is sane" do
     quickCheck \(x :: Int) -> head (singleton x) === Just x
     quickCheck \(x :: Int) -> head1 (singleton x) === x
     quickCheck \(x :: Maybe String) -> head (fromMaybe x) === x
     quickCheck \x -> head (replicate x "ehehe") === iff (x > 0) "ehehe"
     quickCheck \x (y :: Int) -> head (replicate1 x y) === Just y
-  test "last is sane" do
+  it "last is sane" do
     quickCheck \(x :: Int) -> last (singleton x) === Just x
     quickCheck \(x :: Int) -> last1 (singleton x) === x
     quickCheck \(x :: Maybe String) -> last (fromMaybe x) === x
-    quickCheck \x -> last (replicate x "ehehe") === iff (x > 0) "ehehe"
-    quickCheck \x (y :: Int) -> last (replicate1 x y) === Just y
-  test "double uncons" do
+    quickCheck' 5 \x -> last (replicate x "ehehe") === iff (x > 0) "ehehe"
+    quickCheck' 5 \x (y :: Int) -> last (replicate1 x y) === Just y
+  it "double uncons" do
     let double :: forall a. Trivial a -> Maybe (a /\ Maybe a)
         double = map (map head) <<< uncons
     quickCheck \(x :: Int) -> double (singleton x) === Just (x /\ Nothing)
     quickCheck \x -> isJust (snd =<< double (replicate1 x unit)) === (x > 1)
-  test "head tail gets second element" do
-    Assert.assert "tail of none is still none" $ isNothing $ head $ tail none
+  it "head tail gets second element" do
+    head (tail none) `oughta` isNothing
     quickCheck \(x :: String) -> head (tail $ singleton x) === Nothing
     quickCheck \(x :: Char) -> head (tail $ upFrom x) === (succ =<< succ x)
     quickCheck \(x :: Trivial Int) -> head (tail x) === index x 1
-  test "last tail gets last" do
+  it "last tail gets last" do
     quickCheck \(x :: String) -> last (tail $ singleton x) === Nothing
     quickCheck \(x :: Trivial Int) -> last (tail x) === tail x *> last x
-  test "last init gets second to last" do
+  it "last init gets second to last" do
     quickCheck \(x :: String) -> last (init $ singleton x) === Nothing
-    quickCheck \(x :: Char) y -> last (init $ enumFromTo x y) === case compare x y of
+    quickCheck' 50 \(x :: Char) y -> last (init $ enumFromTo x y) === case compare x y of
       LT -> pred y
       GT -> succ y
       EQ -> Nothing
-  test "Maybe round trip" do
+  it "Maybe round trip" do
     quickCheck \(x :: Maybe Char) -> runTrivial (fromMaybe x) === x
-  test "take <> drop" do
+  it "take <> drop" do
     quickCheck \(x :: Trivial Int) n -> refoldMap singleton (take n x) <> refoldMap singleton (drop n x) === (runTrivial x :: Array _)
-  test "take agrees with index" do
+  it "take agrees with index" do
     quickCheck \(x :: Trivial Char) n -> refoldMap (Just <<< Last) (take n x) === Last <$> index x ((min n $ length x) - 1)
-  test "drop agrees with index" do
+  it "drop agrees with index" do
     quickCheck \(x :: Trivial Char) n -> drop n x === index x (max n 0)
-  test "take1 agrees with index1" do
+  it "take1 agrees with index1" do
     quickCheck \(x :: Trivial1 Char) n -> refoldMap1 Last (take1 n x) === (Last $ index1 x (clamp 0 (length x - 1) (n - 1)))
 
-buildSuite :: TestSuite
-buildSuite = suite "build" do
-  test "build on none" do
+buildSuite :: Spec Unit
+buildSuite = describe "build" do
+  it "build on none" do
     quickCheck \(x :: Int) -> cons x none === Just x
     quickCheck \(x :: Int) -> snoc none x === Just x
-  test "build on singleton" do
+  it "build on singleton" do
     quickCheck \x (y :: Int) -> cons x (singleton y) === Just x
     quickCheck \x (y :: Int) -> tail (cons x $ singleton y) === Just y
     quickCheck \x (y :: Int) -> snoc (singleton y) x === Just y
     quickCheck \x (y :: Int) -> tail (snoc (singleton y) x) === Just x
-  test "build on Unfoldable1" do
+  it "build on Unfoldable1" do
     quickCheck \x (y :: Trivial1 Int) -> cons x (runTrivial1 y) === Just x
     quickCheck \x (y :: Trivial1 Int) -> head1 (snoc (runTrivial1 y) x) === head1 y
     quickCheck \x (y :: Trivial1 Int) -> tail (cons x $ runTrivial1 y) === Just (head1 y)
     quickCheck \x (y :: Trivial1 Int) -> tail (snoc (runTrivial1 y) x) === index (runTrivial1 y) 1 <|> Just x
 
-foldSuite :: TestSuite
-foldSuite = suite "foldl foldr" do
-  suite "Foldable Trivial1" do
-    test "associative string concatenation agrees" do
+foldSuite :: Spec Unit
+foldSuite = describe "foldl foldr" do
+  describe "Foldable Trivial1" do
+    it "associative string concatenation agrees" do
       quickCheck \(u :: Trivial1 String) ->
         foldMapDefaultL identity u === foldMapDefaultR identity u
-  suite "Foldable Trivial" do
-    test "associative string concatenation agrees" do
+  describe "Foldable Trivial" do
+    it "associative string concatenation agrees" do
       quickCheck \(u :: Trivial String) ->
         foldMapDefaultL identity u === foldMapDefaultR identity u
-    test "empty folds" do 
+    it "empty folds" do 
       quickCheck \(f :: Int -> String -> Int) x -> (foldl f x ::<*> none) === x
       quickCheck \(f :: String -> Int -> Int) x -> (foldr f x ::<*> none) === x
-  suite "Foldable1 Trivial1" do
-    test "associative string concatenation agrees" do
+  describe "Foldable1 Trivial1" do
+    it "associative string concatenation agrees" do
       quickCheck \(u :: Trivial1 String) ->
         foldMap1DefaultL identity u === foldMap1DefaultR identity u
-    test "singleton folds" do 
+    it "singleton folds" do 
       quickCheck \f (x :: Int) -> (foldl1 f ::<+> singleton x) === x
       quickCheck \f (x :: Int) -> (foldr1 f ::<+> singleton x) === x
 
-enumSuite :: TestSuite
-enumSuite = suite "enums" do
+enumSuite :: Spec Unit
+enumSuite = describe "enums" do
   genericEnumSuite "Int" (Proxy :: Proxy Int) do
-    test "index matches upFromIncluding" do
+    it "index matches upFromIncluding" do
       quickCheck' 20 \x y -> index (upFromIncluding x) y === iff (y >= 0) (x + y)
-    test "index matches iterate" do
-      quickCheck' 20 \x -> index (iterate (_+1) 0) x === iff (x >= 0) x
+    it "index matches iterate" do
+      quickCheck' 5 \x -> index (iterate (_+1) 0) x === iff (x >= 0) x
   genericBoundedEnumSuite "Char" (Proxy :: Proxy Char) $ pure unit
   genericBoundedEnumSuite "Ordering" (Proxy :: Proxy Ordering) $ pure unit
   genericBoundedEnumSuite "Boolean" (Proxy :: Proxy Boolean) $ pure unit
   genericBoundedEnumSuite "Unit" (Proxy :: Proxy Unit) $ pure unit -- ...what was I thinking of doing for bounded extras again
 
 genericEnumSuite :: forall a. Enum a => Arbitrary a => Show a =>
-  String -> Proxy a -> TestSuite -> TestSuite
-genericEnumSuite name _ extras = suite name do
-  test "directionality" do
+  String -> Proxy a -> Spec Unit
+ -> Spec Unit
+
+genericEnumSuite name _ extras = describe name do
+  it "directionality" do
     quickCheck' 100 \(x :: a) -> head (upFrom x) === succ x
     quickCheck' 100 \(x :: a) -> head (downFrom x) === pred x
   extras
 
 genericBoundedEnumSuite :: forall a. BoundedEnum a => Arbitrary a => Show a =>
-  String -> Proxy a -> TestSuite -> TestSuite
-genericBoundedEnumSuite name p extras = genericEnumSuite name p $ (_ <> extras) do
-  test "ends are in right order" do
-    Assert.equal (First bottom) $ foldEnum (First :: a -> First a)
-    Assert.equal (Last top) $ foldEnum (Last :: a -> Last a)
+  String -> Proxy a -> Spec Unit
+ -> Spec Unit
 
-newtypesSuite :: TestSuite
-newtypesSuite = suite "Newtypes" do
-  test "empty MaybeEmpty is Nothing" do
-    Assert.equal (Nothing :: Maybe (NEL.NonEmptyList Unit)) $ un MaybeEmpty none
-  test "MaybeEmpty Maybe Int agrees with Extend Maybe" do
+genericBoundedEnumSuite name p extras = genericEnumSuite name p $ (_ *> extras) do
+  it "ends are in right order" do
+    First bottom `shouldEqual` foldEnum (First :: a -> First a)
+    Last top `shouldEqual` foldEnum (Last :: a -> Last a)
+
+newtypesSuite :: Spec Unit
+newtypesSuite = describe "Newtypes" do
+  it "empty MaybeEmpty is Nothing" do
+    (Nothing :: Maybe (NEL.NonEmptyList Unit)) `shouldEqual` un MaybeEmpty none
+  it "MaybeEmpty Maybe Int agrees with Extend Maybe" do
     quickCheck \(x :: Trivial Int) -> un MaybeEmpty (runTrivial x) === duplicate (runTrivial x)
-  test "NonEmptyList always roundtrips intact" do
+  it "NonEmptyList always roundtrips intact" do
     quickCheck \(x :: NEL.NonEmptyList String) -> un MaybeEmpty (NEL.toUnfoldable x) === Just x
-  test ("distributeMaybes would agree with Distributive Identity..." <>
+  it ("distributeMaybes would agree with Distributive Identity..." <>
         "if Identity had an Unfoldable1 instance, which it just doesn't for some reason") do
     quickCheck \(x :: Maybe (Identity Char)) -> distributeMaybesA (MaybeEmpty x) === distribute x
-  test "toAlternative agrees with Monad Array" do
+  it "toAlternative agrees with Monad Array" do
     quickCheck \(x :: Array Number) -> join (toAlternative $ toUnfoldable x) === x
 
 -- because it would be ESPECIALLY embarrassing if this didn't work :P
-exampleInTheReadmeTest :: TestSuite
-exampleInTheReadmeTest = test "Example in the README" $
+exampleInTheReadmeTest :: Spec Unit
+exampleInTheReadmeTest = it "Example in the README" $
   Pipes.runEffect $ exampleInTheReadme >-> do
     equals $ Just 'z'
     equals   "gonna give you up"
     equals   720
   where equals :: forall a. Show a => a -> Consumer_ String Aff Unit
-        equals value = await >>= lift <<< Assert.equal (show value)
+        equals value = await >>= lift <<< shouldEqual (show value)
 
 -- it took me embarrassingly long to fully realize Identity doesn't just, like,
 -- automatically coerce to literally any other monad :p

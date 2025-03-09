@@ -17,12 +17,16 @@ package:
   test:
     main: Test.Main
     dependencies:
-      - test-unit
+      - spec
+      - spec-quickcheck
+      - spec-node
+      - exceptions
       - aff
       - pipes
       - lists
       - distributive
       - identity
+      - my-spec-reporter
   build:
     pedanticPackages: true
   publish:
@@ -38,5 +42,7 @@ package:
 workspace:
   packageSet:
     registry: 63.3.0
-  buildOpts:
-    censorLibraryWarnings: all # *stares at test-unit*
+  extraPackages:
+    my-spec-reporter:
+      git: https://github.com/UnrelatedString/my-spec-reporter.git
+      ref: main

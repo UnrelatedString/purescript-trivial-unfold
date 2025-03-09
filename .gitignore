@@ -21,3 +21,6 @@ generated-docs/
 .purs*
 .psa*
 .spago
+
+# nice to have but no need to commit lol
+.spec-results
