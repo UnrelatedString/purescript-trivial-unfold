@@ -3,7 +3,7 @@ module Test.Main where
 import Prelude
 
 import Effect (Effect)
-import Test.Spec(Spec, describe, it)
+import Test.Spec (Spec, describe, it)
 import Test.Spec.Assertions (shouldEqual, shouldSatisfy, AnyShow(..))
 import Test.QuickCheck ((===))
 import Test.QuickCheck.Arbitrary (class Arbitrary)
@@ -23,13 +23,13 @@ import Data.Unfoldable.Trivial.Internal
  , trivial
  , runTrivial
  , (::<*>)
-)
+ )
 
 import Data.Unfoldable1.Trivial1.Internal
  ( Trivial1
  , runTrivial1
  , (::<+>)
-)
+ )
 
 import Data.Unfoldable.Trivial
  ( head1
@@ -50,7 +50,7 @@ import Data.Unfoldable.Trivial
  , take1
  , index1
  , drop
-)
+ )
 
 import Data.Unfoldable.MaybeEmpty
  ( MaybeEmpty(..)
