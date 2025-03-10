@@ -18,9 +18,10 @@ import Data.Functor.Invariant (class Invariant, imapF)
 import Data.Generic.Rep (class Generic)
 import Data.Eq (class Eq1, eq1)
 import Data.Ord (class Ord1, compare1)
-import Data.Traversable (class Traversable, traverse)
 import Test.QuickCheck.Arbitrary (class Arbitrary, class Coarbitrary)
 import Control.Alternative (class Alt, class Plus, class Alternative, (<|>), empty)
+import Data.Foldable (class Foldable, foldr, foldl, foldMap)
+import Data.Traversable (class Traversable, traverse, sequence)
 import Data.Unfoldable
  ( class Unfoldable1
  , class Unfoldable
@@ -98,6 +99,15 @@ instance maybeEmptyAlternative :: (Applicative f, Alt f) => Alternative (MaybeEm
 instance maybeEmptyExtend :: Extend f => Extend (MaybeEmpty f) where
   extend f (MaybeEmpty (Just x)) = MaybeEmpty $ Just $ x =>> (f <<< MaybeEmpty <<< Just)
   extend _ (MaybeEmpty Nothing) = MaybeEmpty Nothing
+
+instance maybeEmptyFoldable :: Foldable f => Foldable (MaybeEmpty f) where
+  foldr f b = foldl (foldr f) b <<< unwrap
+  foldl f b = foldl (foldl f) b <<< unwrap
+  foldMap f = foldMap (foldMap f) <<< unwrap
+
+instance maybeEmptyTraversable :: Traversable f => Traversable (MaybeEmpty f) where
+  traverse f = map MaybeEmpty <<< traverse (traverse f) <<< unwrap
+  sequence = map MaybeEmpty <<<  traverse sequence <<< unwrap
 
 -- | Convenience wrapper for `maybe` on the inner `Maybe`. Can save an
 -- | `import Data.Newtype (un)` if this is all you need from Data.Unfoldable.MaybeEmpty.
