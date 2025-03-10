@@ -107,7 +107,7 @@ instance maybeEmptyFoldable :: Foldable f => Foldable (MaybeEmpty f) where
 
 instance maybeEmptyTraversable :: Traversable f => Traversable (MaybeEmpty f) where
   traverse f = map MaybeEmpty <<< traverse (traverse f) <<< unwrap
-  sequence = map MaybeEmpty <<<  traverse sequence <<< unwrap
+  sequence   = map MaybeEmpty <<< traverse sequence <<< unwrap
 
 -- | Convenience wrapper for `maybe` on the inner `Maybe`. Can save an
 -- | `import Data.Newtype (un)` if this is all you need from Data.Unfoldable.MaybeEmpty.
