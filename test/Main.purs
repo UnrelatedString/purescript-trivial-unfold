@@ -67,7 +67,7 @@ import Data.Semigroup.First (First(..))
 import Data.Semigroup.Last (Last(..))
 import Data.Unfoldable (none, fromMaybe, replicate)
 import Data.Unfoldable1 (singleton, replicate1, unfoldr1)
-import Data.Foldable (foldl, foldr, foldMapDefaultL, foldMapDefaultR, intercalate, length)
+import Data.Foldable (foldl, foldr, foldMap, foldMapDefaultL, foldMapDefaultR, intercalate, length)
 import Data.Semigroup.Foldable (foldl1, foldr1, foldMap1DefaultL, foldMap1DefaultR)
 import Type.Proxy (Proxy(..))
 import Data.Array (toUnfoldable)
@@ -221,6 +221,12 @@ newtypesSuite = describe "Newtypes" do
     quickCheck \(x :: Maybe (Identity Char)) -> distributeMaybesA (MaybeEmpty x) === distribute x
   it "toAlternative agrees with Monad Array" do
     quickCheck \(x :: Array Number) -> join (toAlternative $ toUnfoldable x) === x
+  it "Foldable MaybeEmpty Trivial1 agrees with Foldable Trivial" do
+    let the :: forall a. Trivial a -> MaybeEmpty Trivial1 a
+        the = runTrivial
+    quickCheck \(x :: Trivial Char) (f :: Char -> Int -> Int) y -> foldr f y (the x) === foldr f y x
+    quickCheck \(x :: Trivial Char) (f :: Int -> Char -> Int) y -> foldl f y (the x) === foldl f y x
+    quickCheck \(x :: Trivial Char) (f :: Char -> String) -> foldMap f (the x) === foldMap f x
 
 -- because it would be ESPECIALLY embarrassing if this didn't work :P
 exampleInTheReadmeTest :: Spec Unit
