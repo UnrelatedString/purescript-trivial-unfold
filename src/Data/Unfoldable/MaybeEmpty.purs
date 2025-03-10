@@ -5,6 +5,7 @@ module Data.Unfoldable.MaybeEmpty
  , distributeMaybes
  , distributeMaybesA
  , toAlternative
+ , maybeOver
  ) where
 
 import Prelude
@@ -136,3 +137,7 @@ distributeMaybesA (MaybeEmpty Nothing) = pure Nothing
 toAlternative :: forall u f a. Alternative f => MaybeEmpty u a -> f (u a)
 toAlternative (MaybeEmpty (Just x)) = pure x
 toAlternative (MaybeEmpty Nothing) = empty
+
+-- | Applies a function to the inner container if present.
+maybeOver :: forall f g a b. (f a -> g b) -> MaybeEmpty f a -> MaybeEmpty g b
+maybeOver = over MaybeEmpty <<< map
