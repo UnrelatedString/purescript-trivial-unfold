@@ -186,7 +186,7 @@
     },
     "package_set": {
       "address": {
-        "registry": "63.3.0"
+        "registry": "63.4.0"
       },
       "compiler": ">=0.15.15 <0.16.0",
       "content": {
@@ -502,7 +502,7 @@
         "owoify": "1.2.0",
         "pairs": "9.0.1",
         "parallel": "7.0.0",
-        "parsing": "10.2.0",
+        "parsing": "10.3.0",
         "parsing-dataview": "3.2.4",
         "partial": "4.0.0",
         "pathy": "9.0.0",
