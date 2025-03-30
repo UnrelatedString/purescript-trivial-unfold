@@ -85,7 +85,7 @@ instance maybeEmptyInvariant :: Functor f => Invariant (MaybeEmpty f) where
 -- | Composes `Alt Maybe` with `Alt f`.
 -- | This does not seem likely to be particularly useful, but then again, what does?
 -- |
--- | If you just want the first nonempty `MaybeEmpty f a`, `unwrap` it to `Maybe (f a)`.
+-- | If you just want the first nonempty `MaybeEmpty f a`, `unwrap` or `toAlternative` it to `Maybe (f a)`.
 instance maybeEmptyAlt :: Alt f => Alt (MaybeEmpty f) where
   alt (MaybeEmpty (Just a)) (MaybeEmpty (Just b)) = MaybeEmpty $ Just $ a <|> b
   alt a b = over2 MaybeEmpty (<|>) a b
