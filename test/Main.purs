@@ -19,44 +19,44 @@ import Control.Monad.Trans.Class (lift)
 import Control.Monad.Error.Class (class MonadThrow)
 
 import Data.Unfoldable.Trivial.Internal
- ( Trivial
- , trivial
- , runTrivial
- , (::<*>)
- )
+  ( Trivial
+  , trivial
+  , runTrivial
+  , (::<*>)
+  )
 
 import Data.Unfoldable1.Trivial1.Internal
- ( Trivial1
- , runTrivial1
- , (::<+>)
- )
+  ( Trivial1
+  , runTrivial1
+  , (::<+>)
+  )
 
 import Data.Unfoldable.Trivial
- ( head1
- , head
- , tail
- , last1
- , last
- , init
- , index
- , foldEnum
- , iterate
- , uncons
- , cons
- , snoc
- , refoldMap
- , refoldMap1
- , take
- , take1
- , index1
- , drop
- )
+  ( head1
+  , head
+  , tail
+  , last1
+  , last
+  , init
+  , index
+  , foldEnum
+  , iterate
+  , uncons
+  , cons
+  , snoc
+  , refoldMap
+  , refoldMap1
+  , take
+  , take1
+  , index1
+  , drop
+  )
 
 import Data.Unfoldable.MaybeEmpty
- ( MaybeEmpty(..)
- , distributeMaybesA
- , toAlternative
- )
+  ( MaybeEmpty(..)
+  , distributeMaybesA
+  , toAlternative
+  )
 
 import Data.Maybe (Maybe(..), isJust, isNothing)
 import Control.Alternative ((<|>), guard)

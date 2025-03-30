@@ -1,12 +1,12 @@
 module Data.Unfoldable.MaybeEmpty
- ( MaybeEmpty(..)
- , maybeEmpty
- , maybeEmpty'
- , distributeMaybes
- , distributeMaybesA
- , toAlternative
- , maybeOver
- ) where
+  ( MaybeEmpty(..)
+  , maybeEmpty
+  , maybeEmpty'
+  , distributeMaybes
+  , distributeMaybesA
+  , toAlternative
+  , maybeOver
+  ) where
 
 import Prelude
 
@@ -24,12 +24,12 @@ import Control.Alternative (class Alt, class Plus, class Alternative, (<|>), emp
 import Data.Foldable (class Foldable, foldr, foldl, foldMap)
 import Data.Traversable (class Traversable, traverse, sequence)
 import Data.Unfoldable
- ( class Unfoldable1
- , class Unfoldable
- , unfoldr1
- , unfoldr
- , singleton
- )
+  ( class Unfoldable1
+  , class Unfoldable
+  , unfoldr1
+  , unfoldr
+  , singleton
+  )
 import Data.Unfoldable.Trivial (cons)
 
 -- | Lift an `Unfoldable1` into an `Unfoldable` by wrapping it in `Maybe`,
