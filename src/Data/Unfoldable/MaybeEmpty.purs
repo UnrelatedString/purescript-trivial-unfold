@@ -110,8 +110,8 @@ instance maybeEmptyTraversable :: Traversable f => Traversable (MaybeEmpty f) wh
   traverse f = map MaybeEmpty <<< traverse (traverse f) <<< unwrap
   sequence   = map MaybeEmpty <<< traverse sequence <<< unwrap
 
--- | Convenience wrapper for `maybe` on the inner `Maybe`. Can save an
--- | `import Data.Newtype (un)` if this is all you need from Data.Unfoldable.MaybeEmpty.
+-- | Convenience wrapper for `maybe` on the inner `Maybe`,
+-- | to save you an `un` or `toAlternative`.
 maybeEmpty :: forall f a b. b -> (f a -> b) -> MaybeEmpty f a -> b
 maybeEmpty d f = maybe d f <<< unwrap
 
