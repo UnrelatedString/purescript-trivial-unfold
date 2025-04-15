@@ -137,7 +137,7 @@ instance trivialLazy :: Lazy (Trivial a) where
 instance trivialCompactable :: Compactable Trivial where
   compact :: forall a. Trivial (Maybe a) -> Trivial a
   compact = untrivial eCompact
-    where eCompact :: forall b. Generator (Maybe a) b -> Trivial a
+    where eCompact :: forall b. Generator (Maybe a) b -> b -> Trivial a
           eCompact f seed = unfoldr filtering seed
             where filtering :: b -> Maybe (a /\ b)
                   filtering b
@@ -146,5 +146,5 @@ instance trivialCompactable :: Compactable Trivial where
                           (\_ -> filtering b')
                           (Just <<< (_ /\ b'))
                           a
-                    | Nothing <- f b = Nothing
-  separate = separateDefault
+                    | otherwise = Nothing
+  separate t = separateDefault t
