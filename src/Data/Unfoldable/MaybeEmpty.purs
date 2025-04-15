@@ -30,7 +30,6 @@ import Data.Unfoldable
   , unfoldr1
   , unfoldr
   , singleton
-  , none
   )
 import Data.Unfoldable.Trivial (cons)
 

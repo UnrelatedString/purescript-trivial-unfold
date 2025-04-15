@@ -28,6 +28,12 @@ import Data.Exists (Exists, mkExists, runExists)
 import Data.Bifunctor (lmap)
 import Data.Functor.Invariant (class Invariant, imapF)
 import Data.Compactable (class Compactable, separateDefault)
+import Data.Filterable
+  ( class Filterable
+  , partitionDefaultFilterMap
+  , partitionMapDefault
+  , filterMapDefault
+  )
 import Control.Lazy (class Lazy)
 import Test.QuickCheck.Arbitrary (class Arbitrary, class Coarbitrary, arbitrary)
 import Test.QuickCheck.Gen (sized)
@@ -135,6 +141,7 @@ instance trivialLazy :: Lazy (Trivial a) where
   defer = flip identity unit
 
 instance trivialCompactable :: Compactable Trivial where
+  -- | Filters elements as they're produced
   compact :: forall a. Trivial (Maybe a) -> Trivial a
   compact = untrivial eCompact
     where eCompact :: forall b. Generator (Maybe a) b -> b -> Trivial a
@@ -147,4 +154,24 @@ instance trivialCompactable :: Compactable Trivial where
                           (Just <<< (_ /\ b'))
                           a
                     | otherwise = Nothing
+  -- | Default implementation, essentially running two separate filters.
+  -- | Not great, but inherently can't do better without an intermediate container
+  -- | (or emulating such with some massive thunk buildup)
+  -- | -- which you probably do want at that point!
   separate t = separateDefault t
+
+instance trivialFilterable :: Filterable Trivial where
+  partitionMap p = partitionMapDefault p
+  partition p = partitionDefaultFilterMap p
+  filterMap p = filterMapDefault p
+  filter :: forall a. (a -> Boolean) -> Trivial a -> Trivial a
+  filter p = untrivial eFilter
+    where eFilter :: forall b. Generator a b -> b -> Trivial a
+          eFilter f seed = unfoldr filtering seed
+            where filtering :: b -> Maybe (a /\ b)
+                  filtering b
+                    | Just (a /\ b') <- f b =
+                        if p a
+                        then Just (a /\ b')
+                        else filtering b'
+                    | otherwise = Nothing
