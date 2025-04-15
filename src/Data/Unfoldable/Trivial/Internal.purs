@@ -7,15 +7,15 @@
 -- | Use this module directly only if you intend to directly inspect `Trivial` values yourself.
 
 module Data.Unfoldable.Trivial.Internal
- ( Trivial
- , Generator
- , trivial
- , untrivial
- , turbofish
- , (::<*>)
- , unfoldr1Default
- , runTrivial
- ) where
+  ( Trivial
+  , Generator
+  , trivial
+  , untrivial
+  , turbofish
+  , (::<*>)
+  , unfoldr1Default
+  , runTrivial
+  ) where
 
 import Prelude
 

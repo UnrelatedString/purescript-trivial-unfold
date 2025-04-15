@@ -2,19 +2,19 @@
 -- | for `Unfoldable1`.
 
 module Data.Unfoldable1.Trivial1
- ( module Reexports
- , refoldl1
- , refoldr1
- , refoldMap1
- , refold1
- , foldEnum
- , unfoldrInf
- , iterate
- , head1
- , last1
- , take1
- , index1
- ) where
+  ( module Reexports
+  , refoldl1
+  , refoldr1
+  , refoldMap1
+  , refold1
+  , foldEnum
+  , unfoldrInf
+  , iterate
+  , head1
+  , last1
+  , take1
+  , index1
+  ) where
 
 import Data.Unfoldable1.Trivial1.Internal
   ( Trivial1
@@ -26,11 +26,11 @@ import Data.Unfoldable1.Trivial1.Internal
 import Prelude
 
 import Data.Unfoldable1.Trivial1.Internal
- ( Trivial1
- , (::<+>)
- , untrivial1
- , Generator1
- )
+  ( Trivial1
+  , (::<+>)
+  , untrivial1
+  , Generator1
+  )
 
 import Data.Unfoldable1 (class Unfoldable1, unfoldr1)
 import Data.Semigroup.Foldable (foldl1, foldr1, foldMap1, fold1)

@@ -1,24 +1,24 @@
--- | This "module" provides various adapters and other such utilities
+-- | This module provides various adapters and other such utilities
 -- | for `Unfoldable1` and `Unfoldable`.
 
 module Data.Unfoldable.Trivial
- ( module Reexports
- , head
- , tail
- , last
- , init
- , take
- , cons
- , snoc
- , uncons
- , index
- , drop
- , refoldl
- , refoldr
- , refoldMap
- , refold
- , emptyIfNone
- ) where
+  ( module Reexports
+  , head
+  , tail
+  , last
+  , init
+  , take
+  , cons
+  , snoc
+  , uncons
+  , index
+  , drop
+  , refoldl
+  , refoldr
+  , refoldMap
+  , refold
+  , emptyIfNone
+  ) where
 
 import Data.Unfoldable.Trivial.Internal
   ( unfoldr1Default
@@ -27,23 +27,23 @@ import Data.Unfoldable.Trivial.Internal
   , (::<*>)
   ) as Reexports
 import Data.Unfoldable1.Trivial1
- ( Trivial1
- , trivial1
- , turbofish1
- , (::<+>)
- , uncons1
- , refoldl1
- , refoldr1
- , refoldMap1
- , refold1
- , foldEnum
- , unfoldrInf
- , iterate
- , head1
- , last1
- , take1
- , index1
- ) as Reexports
+  ( Trivial1
+  , trivial1
+  , turbofish1
+  , (::<+>)
+  , uncons1
+  , refoldl1
+  , refoldr1
+  , refoldMap1
+  , refold1
+  , foldEnum
+  , unfoldrInf
+  , iterate
+  , head1
+  , last1
+  , take1
+  , index1
+  ) as Reexports
 
 import Prelude
 

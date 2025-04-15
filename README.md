@@ -1,6 +1,6 @@
 [![CI](https://github.com/UnrelatedString/purescript-trivial-unfold/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/UnrelatedString/purescript-trivial-unfold/actions/workflows/ci.yml)
 ![Latest Version Tag](https://img.shields.io/github/v/tag/UnrelatedString/purescript-trivial-unfold)
-[![Pursuit](https://pursuit.purescript.org/packages/purescript-trivial-unfold/badge)](https://pursuit.purescript.org/packages/purescript-trivial-unfold)
+[![Pursuit](https://pursuit.purescript.org/packages/purescript-trivial-unfold/badge?)](https://pursuit.purescript.org/packages/purescript-trivial-unfold)
 
 # purescript-trivial-unfold
 
@@ -38,8 +38,8 @@ main = do
 
   -- Fold directly from a generating function.
   -- Basic folds are also provided specialized, with the "re-" prefix;
-  -- i.e. `refold1 $ unfoldr1 fact 1` is equivalent to
-  --      `fold1 ::<+> unfoldr1 fact 1`.
+  -- i.e. `refoldMap1 Multiplicative $ unfoldr1 fact 1` is equivalent to
+  --      `foldMap1 Multiplicative ::<+> unfoldr1 fact 1`.
   let fact n = n /\ (guard (n < 6) $> n + 1)
   logShow $ ala Multiplicative refoldMap1 $ unfoldr1 fact 1
   -- > 620

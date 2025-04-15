@@ -1,11 +1,12 @@
 module Data.Unfoldable.MaybeEmpty
- ( MaybeEmpty(..)
- , maybeEmpty
- , maybeEmpty'
- , distributeMaybes
- , distributeMaybesA
- , toAlternative
- ) where
+  ( MaybeEmpty(..)
+  , maybeEmpty
+  , maybeEmpty'
+  , distributeMaybes
+  , distributeMaybesA
+  , toAlternative
+  , maybeOver
+  ) where
 
 import Prelude
 
@@ -18,16 +19,17 @@ import Data.Functor.Invariant (class Invariant, imapF)
 import Data.Generic.Rep (class Generic)
 import Data.Eq (class Eq1, eq1)
 import Data.Ord (class Ord1, compare1)
-import Data.Traversable (class Traversable, traverse)
 import Test.QuickCheck.Arbitrary (class Arbitrary, class Coarbitrary)
 import Control.Alternative (class Alt, class Plus, class Alternative, (<|>), empty)
+import Data.Foldable (class Foldable, foldr, foldl, foldMap)
+import Data.Traversable (class Traversable, traverse, sequence)
 import Data.Unfoldable
- ( class Unfoldable1
- , class Unfoldable
- , unfoldr1
- , unfoldr
- , singleton
- )
+  ( class Unfoldable1
+  , class Unfoldable
+  , unfoldr1
+  , unfoldr
+  , singleton
+  )
 import Data.Unfoldable.Trivial (cons)
 
 -- | Lift an `Unfoldable1` into an `Unfoldable` by wrapping it in `Maybe`,
@@ -83,7 +85,7 @@ instance maybeEmptyInvariant :: Functor f => Invariant (MaybeEmpty f) where
 -- | Composes `Alt Maybe` with `Alt f`.
 -- | This does not seem likely to be particularly useful, but then again, what does?
 -- |
--- | If you just want the first nonempty `MaybeEmpty f a`, `unwrap` it to `Maybe (f a)`.
+-- | If you just want the first nonempty `MaybeEmpty f a`, `unwrap` or `toAlternative` it to `Maybe (f a)`.
 instance maybeEmptyAlt :: Alt f => Alt (MaybeEmpty f) where
   alt (MaybeEmpty (Just a)) (MaybeEmpty (Just b)) = MaybeEmpty $ Just $ a <|> b
   alt a b = over2 MaybeEmpty (<|>) a b
@@ -99,8 +101,17 @@ instance maybeEmptyExtend :: Extend f => Extend (MaybeEmpty f) where
   extend f (MaybeEmpty (Just x)) = MaybeEmpty $ Just $ x =>> (f <<< MaybeEmpty <<< Just)
   extend _ (MaybeEmpty Nothing) = MaybeEmpty Nothing
 
--- | Convenience wrapper for `maybe` on the inner `Maybe`. Can save an
--- | `import Data.Newtype (un)` if this is all you need from Data.Unfoldable.MaybeEmpty.
+instance maybeEmptyFoldable :: Foldable f => Foldable (MaybeEmpty f) where
+  foldr f b = foldl (foldr f) b <<< unwrap
+  foldl f b = foldl (foldl f) b <<< unwrap
+  foldMap f = foldMap (foldMap f) <<< unwrap
+
+instance maybeEmptyTraversable :: Traversable f => Traversable (MaybeEmpty f) where
+  traverse f = map MaybeEmpty <<< traverse (traverse f) <<< unwrap
+  sequence   = map MaybeEmpty <<< traverse sequence <<< unwrap
+
+-- | Convenience wrapper for `maybe` on the inner `Maybe`,
+-- | to save you an `un` or `toAlternative`.
 maybeEmpty :: forall f a b. b -> (f a -> b) -> MaybeEmpty f a -> b
 maybeEmpty d f = maybe d f <<< unwrap
 
@@ -126,3 +137,7 @@ distributeMaybesA (MaybeEmpty Nothing) = pure Nothing
 toAlternative :: forall u f a. Alternative f => MaybeEmpty u a -> f (u a)
 toAlternative (MaybeEmpty (Just x)) = pure x
 toAlternative (MaybeEmpty Nothing) = empty
+
+-- | Applies a function to the inner container if present.
+maybeOver :: forall f g a b. (f a -> g b) -> MaybeEmpty f a -> MaybeEmpty g b
+maybeOver = over MaybeEmpty <<< map

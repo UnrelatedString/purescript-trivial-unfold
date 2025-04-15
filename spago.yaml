@@ -18,16 +18,20 @@ package:
   test:
     main: Test.Main
     dependencies:
-      - test-unit
+      - spec
+      - spec-quickcheck
+      - spec-node
+      - exceptions
       - aff
       - pipes
       - lists
       - distributive
       - identity
+      - my-spec-reporter
   build:
     pedanticPackages: true
   publish:
-    version: 0.4.0
+    version: 0.4.1
     license: BSD-3-Clause
     location:
       githubOwner: UnrelatedString
@@ -38,6 +42,8 @@ package:
         id: june@sideros.rocks
 workspace:
   packageSet:
-    registry: 63.3.0
-  buildOpts:
-    censorLibraryWarnings: all # *stares at test-unit*
+    registry: 63.4.0
+  extraPackages:
+    my-spec-reporter:
+      git: https://github.com/UnrelatedString/my-spec-reporter.git
+      ref: main
