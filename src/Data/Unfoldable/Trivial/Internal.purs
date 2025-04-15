@@ -26,6 +26,7 @@ import Data.Tuple.Nested ((/\), type (/\))
 import Data.Maybe (Maybe(..))
 import Data.Exists (Exists, mkExists, runExists)
 import Data.Bifunctor (lmap)
+import Data.Functor.Invariant (class Invariant, imapF)
 import Control.Lazy (class Lazy)
 import Test.QuickCheck.Arbitrary (class Arbitrary, class Coarbitrary, arbitrary)
 import Test.QuickCheck.Gen (sized)
@@ -78,6 +79,9 @@ instance trivialFunctor :: Functor Trivial where
                         $ UnfoldrCall (
                           map (lmap f) <<< g
                         ) seed
+
+instance trivialInvariant :: Invariant Trivial where
+  imap = imapF
 
 -- | Provides a default implementation of `unfoldr1` using `unfoldr` to satisfy
 -- | the superclass bound on `Unfoldable`.

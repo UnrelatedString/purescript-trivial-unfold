@@ -28,6 +28,7 @@ import Data.Tuple.Nested ((/\), type (/\))
 import Data.Maybe (Maybe(..), maybe)
 import Data.Exists (Exists, mkExists, runExists)
 import Data.Bifunctor (lmap)
+import Data.Functor.Invariant (class Invariant, imapF)
 import Control.Lazy (class Lazy)
 import Test.QuickCheck.Arbitrary (class Arbitrary, class Coarbitrary, arbitrary)
 import Test.QuickCheck.Gen (sized)
@@ -79,6 +80,9 @@ instance trivial1Functor :: Functor Trivial1 where
                         $ Unfoldr1Call (
                           lmap f <<< g
                         ) seed
+
+instance trivial1Invariant :: Invariant Trivial1 where
+  imap = imapF
 
 -- | Converts to any other `Unfoldable1`.
 -- | Can also be seen as evaluating the inner `Unfoldr1Call`.

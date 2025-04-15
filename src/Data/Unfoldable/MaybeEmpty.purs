@@ -2,8 +2,11 @@ module Data.Unfoldable.MaybeEmpty
   ( MaybeEmpty(..)
   , maybeEmpty
   , maybeEmpty'
+  , justNonempty
   , distributeMaybes
   , distributeMaybesA
+  , toUnfoldable
+  , catMaybes
   , toAlternative
   , maybeOver
   ) where
@@ -23,18 +26,20 @@ import Test.QuickCheck.Arbitrary (class Arbitrary, class Coarbitrary)
 import Control.Alternative (class Alt, class Plus, class Alternative, (<|>), empty)
 import Data.Foldable (class Foldable, foldr, foldl, foldMap)
 import Data.Traversable (class Traversable, traverse, sequence)
+import Data.Compactable (class Compactable, separateDefault)
 import Data.Unfoldable
   ( class Unfoldable1
   , class Unfoldable
   , unfoldr1
   , unfoldr
   , singleton
+  , none
   )
 import Data.Unfoldable.Trivial (cons)
 
--- | Lift an `Unfoldable1` into an `Unfoldable` by wrapping it in `Maybe`,
--- | such that an empty sequence gives `Nothing` and a nonempty sequence gives
--- | a nonempty `Unfoldable1` in `Just`.
+-- | Lifts a nonempty container into a possibly-empty container by wrapping it in `Maybe`.
+-- | such that an empty sequence corresponds to `Nothing` and a nonempty sequence
+-- | corresponds to the nonempty container in a `Just`.
 newtype MaybeEmpty :: forall k. (k -> Type) -> k -> Type
 newtype MaybeEmpty f a = MaybeEmpty (Maybe (f a))
 
@@ -110,6 +115,20 @@ instance maybeEmptyTraversable :: Traversable f => Traversable (MaybeEmpty f) wh
   traverse f = map MaybeEmpty <<< traverse (traverse f) <<< unwrap
   sequence   = map MaybeEmpty <<< traverse sequence <<< unwrap
 
+instance maybeEmptyCompactable :: Unfoldable1 f => Foldable f => Functor f =>
+  Compactable (MaybeEmpty f) where
+  -- | (Almost) entirely a specialization of `catMaybes`.
+  -- | You probably don't actually want to use this, but it is here for you if you do.
+  -- | If the `MaybeEmpty` was created by unfolding, consider filtering within the unfold
+  -- | using [insert whatever I call it in Trivial uhhhhh];
+  -- | if the `MaybeEmpty` was created by wrapping an existing container, consider whether or
+  -- | not you specifically need the filtered result to be the same thing.
+  compact (MaybeEmpty Nothing) = MaybeEmpty Nothing
+  compact m = catMaybes m
+
+  -- | Default implementation in terms of `compact`.
+  separate = separateDefault
+
 -- | Convenience wrapper for `maybe` on the inner `Maybe`,
 -- | to save you an `un` or `toAlternative`.
 maybeEmpty :: forall f a b. b -> (f a -> b) -> MaybeEmpty f a -> b
@@ -118,7 +137,11 @@ maybeEmpty d f = maybe d f <<< unwrap
 maybeEmpty' :: forall f a b. (Unit -> b) -> (f a -> b) -> MaybeEmpty f a -> b
 maybeEmpty' d f = maybe' d f <<< unwrap
 
--- | Creates an `f` containing a single `Nothing` if empty.
+-- | Wrap an existing container into a `MaybeEmpty`.
+justNonempty :: forall f a. f a -> MaybeEmpty f a
+justNonempty = MaybeEmpty <<< Just
+
+-- | Create an `f` containing a single `Nothing` if empty.
 -- |
 -- | Although Data.Unfoldable calls them "unfoldable functors", `Functor` isn't actually
 -- | a superclass of `Unfoldable1`. On the off chance that you for some reason do in fact
@@ -128,16 +151,27 @@ distributeMaybes :: forall f a. Unfoldable1 f => Functor f => MaybeEmpty f a -> 
 distributeMaybes (MaybeEmpty (Just x)) = Just <$> x
 distributeMaybes (MaybeEmpty Nothing) = singleton Nothing
 
--- | Creates an `f` containing `Nothing` if empty, using `pure` instead of `singleton`.
+-- | Create an `f` containing `Nothing` if empty, using `pure` instead of `singleton`.
 distributeMaybesA :: forall f a. Applicative f => MaybeEmpty f a -> f (Maybe a)
 distributeMaybesA (MaybeEmpty (Just x)) = Just <$> x
 distributeMaybesA (MaybeEmpty Nothing) = pure Nothing
 
--- | Unwraps and converts the inner `Maybe` into an alternative `Alternative`. *(ba dum tss)*
+-- | Convert to an arbitrary `Unfoldable`.
+toUnfoldable :: forall f u a. Unfoldable u => Foldable f => MaybeEmpty f a -> u a
+toUnfoldable (MaybeEmpty Nothing) = none
+toUnfoldable (MaybeEmpty (Just f)) = unfoldr 
+
+-- | Unfold the `Just`s into an arbitrary `Unfoldable`, discoarding `Nothing`s.
+-- | You probably don't want to use this if the `MaybeEmpty` was created by an unfold
+-- | -- see [thing from Trivial].
+catMaybes :: forall f u a. Unfoldable u => Foldable f => MaybeEmpty f (Maybe a) -> u a
+
+
+-- | Unwrap and convert the inner `Maybe` into an alternative `Alternative`. *(ba dum tss)*
 toAlternative :: forall u f a. Alternative f => MaybeEmpty u a -> f (u a)
 toAlternative (MaybeEmpty (Just x)) = pure x
 toAlternative (MaybeEmpty Nothing) = empty
 
--- | Applies a function to the inner container if present.
+-- | Apply a function to the inner container if present.
 maybeOver :: forall f g a b. (f a -> g b) -> MaybeEmpty f a -> MaybeEmpty g b
 maybeOver = over MaybeEmpty <<< map
