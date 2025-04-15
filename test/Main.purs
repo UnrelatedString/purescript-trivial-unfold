@@ -73,6 +73,7 @@ import Type.Proxy (Proxy(..))
 import Data.Array (toUnfoldable)
 import Data.Monoid.Multiplicative (Multiplicative(..))
 import Data.Newtype (un, ala)
+import Data.Compactable (compact)
 import Control.Extend (duplicate)
 import Data.Identity (Identity)
 import Data.Distributive (distribute)
@@ -91,6 +92,7 @@ main = runSpecAndExitProcess [prettyReporter] do
   foldSuite
   enumSuite
   newtypesSuite
+  filterSuite
   exampleInTheReadmeTest
 
 smallSuite :: Spec Unit
@@ -216,7 +218,7 @@ newtypesSuite = describe "Newtypes" do
     quickCheck \(x :: Trivial Int) -> un MaybeEmpty (runTrivial x) === duplicate (runTrivial x)
   it "NonEmptyList always roundtrips intact" do
     quickCheck \(x :: NEL.NonEmptyList String) -> un MaybeEmpty (NEL.toUnfoldable x) === Just x
-  it ("distributeMaybes would agree with Distributive Identity..." <>
+  it ("distributeMaybes would agree with Distributive Identity... " <>
         "if Identity had an Unfoldable1 instance, which it just doesn't for some reason") do
     quickCheck \(x :: Maybe (Identity Char)) -> distributeMaybesA (MaybeEmpty x) === distribute x
   it "toAlternative agrees with Monad Array" do
@@ -227,6 +229,11 @@ newtypesSuite = describe "Newtypes" do
     quickCheck \(x :: Trivial Char) (f :: Char -> Int -> Int) y -> foldr f y (the x) === foldr f y x
     quickCheck \(x :: Trivial Char) (f :: Int -> Char -> Int) y -> foldl f y (the x) === foldl f y x
     quickCheck \(x :: Trivial Char) (f :: Char -> String) -> foldMap f (the x) === foldMap f x
+
+filterSuite :: Spec Unit
+filterSuite = describe "Compactable and Filterable" do
+  it "Functor identity: compact <<< map Just ≡ id" do
+    quickCheck \(x :: Trivial String) -> runTrivial (compact ::<*> map Just x) === (runTrivial :: Trivial String -> Array String) x
 
 -- because it would be ESPECIALLY embarrassing if this didn't work :P
 exampleInTheReadmeTest :: Spec Unit
