@@ -23,10 +23,11 @@ import Data.Foldable (class Foldable, foldrDefault, foldMapDefaultL)
 import Data.Unfoldable (class Unfoldable, class Unfoldable1, unfoldr)
 import Data.Tuple (uncurry)
 import Data.Tuple.Nested ((/\), type (/\))
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe(..), maybe')
 import Data.Exists (Exists, mkExists, runExists)
 import Data.Bifunctor (lmap)
 import Data.Functor.Invariant (class Invariant, imapF)
+import Data.Compactable (class Compactable, separateDefault)
 import Control.Lazy (class Lazy)
 import Test.QuickCheck.Arbitrary (class Arbitrary, class Coarbitrary, arbitrary)
 import Test.QuickCheck.Gen (sized)
@@ -132,3 +133,18 @@ instance trivialArbitrary :: (Arbitrary a, Coarbitrary a) => Arbitrary (Trivial 
 
 instance trivialLazy :: Lazy (Trivial a) where
   defer = flip identity unit
+
+instance trivialCompactable :: Compactable Trivial where
+  compact :: forall a. Trivial (Maybe a) -> Trivial a
+  compact = untrivial eCompact
+    where eCompact :: forall b. Generator (Maybe a) b -> Trivial a
+          eCompact f seed = unfoldr filtering seed
+            where filtering :: b -> Maybe (a /\ b)
+                  filtering b
+                    | Just (a /\ b') <- f b =
+                        maybe'
+                          (\_ -> filtering b')
+                          (Just <<< (_ /\ b'))
+                          a
+                    | Nothing <- f b = Nothing
+  separate = separateDefault

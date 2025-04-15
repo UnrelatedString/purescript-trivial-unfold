@@ -18,6 +18,7 @@ module Data.Unfoldable.Trivial
   , refoldMap
   , refold
   , emptyIfNone
+  , catMaybes
   ) where
 
 import Data.Unfoldable.Trivial.Internal
@@ -58,6 +59,7 @@ import Data.Tuple (snd)
 import Data.Tuple.Nested ((/\), type (/\))
 import Data.Newtype (un)
 import Data.Semigroup.Last (Last(..))
+import Data.Compactable (compact)
 import Control.Alternative (class Alternative, empty)
 
 -- | Returns the first element and a new `Unfoldable` generating the remaining elements,
@@ -112,7 +114,6 @@ take n = untrivial eTake
 
 -- | Drop a number of elements from the start.
 -- Surprised the old version didn't tail call optimize but this is smarter/lazier anyways
--- TODO: nicer kinda-maybe-lazier-feeling impl with compact when I add that
 drop :: forall a u. Unfoldable u => Int -> Trivial a -> u a
 drop n = untrivial eDrop 
   where eDrop :: forall b. Generator a b -> b -> u a
@@ -173,3 +174,7 @@ emptyIfNone :: forall a f u. Alternative f => Unfoldable1 u => Trivial a -> u (f
 emptyIfNone t
   | Just (a /\ r) <- uncons t = cons (pure a) $ pure <$> r
   | otherwise = singleton empty
+
+-- | Unwrap `Just`s and discard `Nothing`s.
+catMaybes :: forall u a. Unfoldable u => Trivial (Maybe a) -> u a
+catMaybes = runTrivial <<< compact
