@@ -80,6 +80,7 @@ import Control.Extend (duplicate)
 import Data.Identity (Identity)
 import Data.Distributive (distribute)
 import Data.List.NonEmpty as NEL
+import Data.Eq (class Eq1)
 
 iff :: forall a. Boolean -> a -> Maybe a
 iff = ($>) <<< guard
@@ -204,6 +205,10 @@ applySuite = describe "Apply and Applicative" do
   it "Apply Trivial1 agrees with zipWith on arrays" do
     quickCheck \(f :: String -> Char -> Int) a b -> runTrivial1 (f <$> a <*> b) === zipWith f (runTrivial1 a) (runTrivial1 b)
 
+genericApplicativeLaws :: forall t. Eq1 t => Applicative t => String -> Proxy t -> Spec Unit
+genericApplicativeLaws name _ = describe ("Applicative " <> name <> " identities") do
+  pure unit
+  -- okay yeah no I'm just going to write an Eq instance it's like basically the same thing anywayss"
 
 enumSuite :: Spec Unit
 enumSuite = describe "enums" do
