@@ -43,6 +43,8 @@ import Data.Unfoldable1.Trivial1
   , last1
   , take1
   , index1
+  , append1
+  , append1'
   ) as Reexports
 
 import Prelude
