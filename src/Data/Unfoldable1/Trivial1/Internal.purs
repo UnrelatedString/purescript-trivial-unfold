@@ -139,7 +139,7 @@ instance trivial1Arbitrary :: (Arbitrary a, Coarbitrary a) => Arbitrary (Trivial
     ) $ 0 /\ seed
 
 instance trivial1Lazy :: Lazy (Trivial1 a) where
-  defer = flip identity unit
+  defer = (#) unit
 
 -- | Concatenation.
 -- |

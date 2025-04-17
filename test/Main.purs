@@ -185,6 +185,8 @@ foldSuite = describe "foldl foldr" do
 
 appendSuite :: Spec Unit
 appendSuite = describe "appends (incl. Semigroup/Alt)" do
+  it "Alt Trivial agrees with Alt Array" do
+    quickCheck \(a :: Trivial Char) b -> arrgh (a <|> b) === arrgh a <|> arrgh b
   it "Alt Trivial1 agrees with Alt Array" do
     quickCheck \(a :: Trivial1 Char) b -> runTrivial1 (a <|> b) === [] <|> runTrivial1 a <|> runTrivial1 b
   it "append1 agrees with Alt Array" do

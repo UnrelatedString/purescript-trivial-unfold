@@ -20,10 +20,11 @@ module Data.Unfoldable.Trivial.Internal
 import Prelude
 
 import Data.Foldable (class Foldable, foldrDefault, foldMapDefaultL)
-import Data.Unfoldable (class Unfoldable, class Unfoldable1, unfoldr)
+import Data.Unfoldable (class Unfoldable, class Unfoldable1, unfoldr, none)
 import Data.Tuple (uncurry)
 import Data.Tuple.Nested ((/\), type (/\))
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe(..), maybe')
+import Data.Either (Either(..), either)
 import Data.Exists (Exists, mkExists, runExists)
 import Data.Bifunctor (lmap)
 import Control.Alternative (class Alt, class Plus, class Alternative, (<|>))
@@ -128,9 +129,26 @@ instance trivialArbitrary :: (Arbitrary a, Coarbitrary a) => Arbitrary (Trivial 
     ) $ 0 /\ seed
 
 instance trivialLazy :: Lazy (Trivial a) where
-  defer = flip identity unit
+  defer = (#) unit
 
--- -- | Concatenation.
--- -- |
--- -- | Do not use this to create a data structure. Please use Data.List.Lazy instead.
--- instance trivialAlt :: Alt Trivial where
+-- | Concatenation.
+-- |
+-- | Do not use this to create a data structure. Please use Data.List.Lazy instead.
+instance trivialAlt :: Alt Trivial where
+  alt :: forall a. Trivial a -> Trivial a -> Trivial a
+  alt t = untrivial (untrivial eAlt t)
+    where eAlt :: forall b b'. Generator a b -> b -> Generator a b' -> b' -> Trivial a
+          eAlt f seed f' seed' = unfoldr appended $ Right seed
+            where appended :: Either b' b -> Maybe (a /\ Either b' b)
+                  appended = either
+                    (map (map Left) <<< f')
+                    (maybe' (\_ -> map Left <$> f' seed') (map $ map Right) <<< f)
+
+instance trivialPlus :: Plus Trivial where
+  empty = none
+
+instance trivial1Semigroup :: Semigroup (Trivial a) where
+  append = (<|>)
+
+instance trivial1Monoid :: Monoid (Trivial a) where
+  mempty = none
