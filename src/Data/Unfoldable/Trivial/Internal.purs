@@ -20,7 +20,13 @@ module Data.Unfoldable.Trivial.Internal
 import Prelude
 
 import Data.Foldable (class Foldable, foldrDefault, foldMapDefaultL)
-import Data.Unfoldable (class Unfoldable, class Unfoldable1, unfoldr, none)
+import Data.Unfoldable
+  (class Unfoldable
+  , class Unfoldable1
+  , unfoldr
+  , singleton
+  , none
+  )
 import Data.Tuple (uncurry)
 import Data.Tuple.Nested ((/\), type (/\))
 import Data.Maybe (Maybe(..), maybe')
@@ -172,4 +178,7 @@ instance trivialApply :: Apply Trivial where
                     a /\ nb' <- f' b'
                     Just $ g a /\ nb /\ nb'
 
+instance trivialApplicative :: Applicative Trivial where
+  pure = singleton
 
+instance trivialAlternative :: Alternative Trivial
