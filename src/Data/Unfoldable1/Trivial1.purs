@@ -136,7 +136,7 @@ iterate f seed = unfoldr1 (map \a -> Just (f a /\ f a)) $ seed /\ seed
 
 -- | Concatenate an `Unfoldable1` with a possibly-empty `Unfoldable`.
 append1 :: forall a u. Unfoldable1 u => Trivial1 a -> Trivial a -> u a
-append1 = (untrivial <<< _) <<< untrivial1 eAppend1
+append1 t1 t = untrivial (untrivial1 eAppend1 t1) t
   where eAppend1 :: forall b b'. Generator1 a b -> b -> Generator a b' -> b' -> u a
         eAppend1 f seed f' seed' = unfoldr1 appended $ Right seed
           where appended :: Either (a /\ b') b -> a /\ Maybe (Either (a /\ b') b)
