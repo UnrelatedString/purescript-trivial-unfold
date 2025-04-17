@@ -72,7 +72,7 @@ import Data.Unfoldable1 (singleton, replicate1, unfoldr1)
 import Data.Foldable (foldl, foldr, foldMap, foldMapDefaultL, foldMapDefaultR, intercalate, length)
 import Data.Semigroup.Foldable (foldl1, foldr1, foldMap1DefaultL, foldMap1DefaultR)
 import Type.Proxy (Proxy(..))
-import Data.Array (toUnfoldable)
+import Data.Array (toUnfoldable, zipWith)
 import Data.Monoid.Multiplicative (Multiplicative(..))
 import Data.Newtype (un, ala)
 import Control.Extend (duplicate)
@@ -95,6 +95,7 @@ main = runSpecAndExitProcess [prettyReporter] do
   buildSuite
   foldSuite
   appendSuite
+  applySuite
   enumSuite
   newtypesSuite
   exampleInTheReadmeTest
@@ -193,6 +194,14 @@ appendSuite = describe "appends (incl. Semigroup/Alt)" do
     quickCheck \(a :: Trivial1 Char) (b :: Trivial Char) -> runTrivial1 (a `append1` b) === runTrivial1 a <|> arrgh b
   it "append1' agrees with Alt Array" do
     quickCheck \(a :: Trivial Char) (b :: Trivial1 Char) -> runTrivial1 (a `append1'` b) === arrgh a <|> runTrivial1 b
+
+applySuite :: Spec Unit
+applySuite = describe "Apply and Applicative" do
+  it "Apply Trivial agrees with zipWith on arrays" do
+    quickCheck \(f :: String -> Char -> Int) a b -> arrgh (f <$> a <*> b) === zipWith f (arrgh a) (arrgh b)
+  it "Apply Trivial1 agrees with zipWith on arrays" do
+    quickCheck \(f :: String -> Char -> Int) a b -> runTrivial1 (f <$> a <*> b) === zipWith f (runTrivial1 a) (runTrivial1 b)
+
 
 enumSuite :: Spec Unit
 enumSuite = describe "enums" do
