@@ -150,8 +150,26 @@ instance trivialAlt :: Alt Trivial where
 instance trivialPlus :: Plus Trivial where
   empty = none
 
-instance trivial1Semigroup :: Semigroup (Trivial a) where
+instance trivialSemigroup :: Semigroup (Trivial a) where
   append = (<|>)
 
-instance trivial1Monoid :: Monoid (Trivial a) where
+instance trivialMonoid :: Monoid (Trivial a) where
   mempty = none
+
+-- | Zipwith; chosen over the `Monad`-compatible nondet choice used for `Array` etc.
+-- | because that would require effectively forcing one argument and either
+-- | re-evaluating it constantly or storing its elements in a real container
+-- | at which point please please please just do that without using `Trivial`.
+-- | Length is the minimum of the arguments' lengths.
+instance trivialApply :: Apply Trivial where
+  apply :: forall a c. Trivial (a -> c) -> Trivial a -> Trivial c
+  apply tg = untrivial (untrivial eApply tg)
+    where eApply :: forall b b'. Generator (a -> c) b -> b -> Generator a b' -> b' -> Trivial c
+          eApply f seed f' seed' = unfoldr (uncurry applied) $ seed /\ seed'
+            where applied :: b -> b' -> Maybe (c /\ b /\ b')
+                  applied b b' = do
+                    g /\ nb <- f b
+                    a /\ nb' <- f' b'
+                    Just $ g a /\ nb /\ nb'
+
+
