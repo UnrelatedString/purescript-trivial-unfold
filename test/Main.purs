@@ -49,6 +49,8 @@ import Data.Unfoldable.Trivial
   , take
   , take1
   , index1
+  , append1
+  , append1'
   , drop
   )
 
@@ -70,7 +72,7 @@ import Data.Unfoldable1 (singleton, replicate1, unfoldr1)
 import Data.Foldable (foldl, foldr, foldMap, foldMapDefaultL, foldMapDefaultR, intercalate, length)
 import Data.Semigroup.Foldable (foldl1, foldr1, foldMap1DefaultL, foldMap1DefaultR)
 import Type.Proxy (Proxy(..))
-import Data.Array (toUnfoldable)
+import Data.Array (toUnfoldable, zipWith)
 import Data.Monoid.Multiplicative (Multiplicative(..))
 import Data.Newtype (un, ala)
 import Control.Extend (duplicate)
@@ -84,11 +86,16 @@ iff = ($>) <<< guard
 oughta :: forall f m t. Functor f => Show (f (AnyShow t)) => MonadThrow Effect.Exception.Error m => f t -> (f (AnyShow t) -> Boolean) -> m Unit
 oughta = map AnyShow >>> shouldSatisfy
 
+arrgh :: forall a. Trivial a -> Array a
+arrgh = runTrivial
+
 main :: Effect Unit
 main = runSpecAndExitProcess [prettyReporter] do
   smallSuite
   buildSuite
   foldSuite
+  appendSuite
+  applySuite
   enumSuite
   newtypesSuite
   exampleInTheReadmeTest
@@ -176,6 +183,25 @@ foldSuite = describe "foldl foldr" do
     it "singleton folds" do 
       quickCheck \f (x :: Int) -> (foldl1 f ::<+> singleton x) === x
       quickCheck \f (x :: Int) -> (foldr1 f ::<+> singleton x) === x
+
+appendSuite :: Spec Unit
+appendSuite = describe "appends (incl. Semigroup/Alt)" do
+  it "Alt Trivial agrees with Alt Array" do
+    quickCheck \(a :: Trivial Char) b -> arrgh (a <|> b) === arrgh a <|> arrgh b
+  it "Alt Trivial1 agrees with Alt Array" do
+    quickCheck \(a :: Trivial1 Char) b -> runTrivial1 (a <|> b) === [] <|> runTrivial1 a <|> runTrivial1 b
+  it "append1 agrees with Alt Array" do
+    quickCheck \(a :: Trivial1 Char) (b :: Trivial Char) -> runTrivial1 (a `append1` b) === runTrivial1 a <|> arrgh b
+  it "append1' agrees with Alt Array" do
+    quickCheck \(a :: Trivial Char) (b :: Trivial1 Char) -> runTrivial1 (a `append1'` b) === arrgh a <|> runTrivial1 b
+
+applySuite :: Spec Unit
+applySuite = describe "Apply and Applicative" do
+  it "Apply Trivial agrees with zipWith on arrays" do
+    quickCheck \(f :: String -> Char -> Int) a b -> arrgh (f <$> a <*> b) === zipWith f (arrgh a) (arrgh b)
+  it "Apply Trivial1 agrees with zipWith on arrays" do
+    quickCheck \(f :: String -> Char -> Int) a b -> runTrivial1 (f <$> a <*> b) === zipWith f (runTrivial1 a) (runTrivial1 b)
+
 
 enumSuite :: Spec Unit
 enumSuite = describe "enums" do

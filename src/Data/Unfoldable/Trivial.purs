@@ -10,6 +10,7 @@ module Data.Unfoldable.Trivial
   , take
   , cons
   , snoc
+  , append'
   , uncons
   , index
   , drop
@@ -43,6 +44,8 @@ import Data.Unfoldable1.Trivial1
   , last1
   , take1
   , index1
+  , append1
+  , append1'
   ) as Reexports
 
 import Prelude
@@ -163,6 +166,12 @@ snoc t l = untrivial eSnoc t
                 failsafed b
                   | Just (a /\ b') <- f b = a /\ Just b'
                   | otherwise = l /\ Nothing
+
+-- | Concatenate two `Unfoldable`s.
+-- |
+-- | Do not use this to create a data structure. Please use Data.List.Lazy instead.
+append' :: forall a u. Unfoldable u => Trivial a -> Trivial a -> u a
+append' = (<<<) runTrivial <<< (<>)
 
 -- | Lift the elements of an `Unfoldable` into an `Alternative` (such as `Maybe`),
 -- | filling in a single `empty` if there are no elements.

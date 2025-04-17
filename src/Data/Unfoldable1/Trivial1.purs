@@ -14,6 +14,8 @@ module Data.Unfoldable1.Trivial1
   , last1
   , take1
   , index1
+  , append1
+  , append1'
   ) where
 
 import Data.Unfoldable1.Trivial1.Internal
@@ -31,10 +33,17 @@ import Data.Unfoldable1.Trivial1.Internal
   , untrivial1
   , Generator1
   )
+import Data.Unfoldable.Trivial.Internal
+  ( Trivial
+  , untrivial
+  , Generator
+  )
+
 
 import Data.Unfoldable1 (class Unfoldable1, unfoldr1)
 import Data.Semigroup.Foldable (foldl1, foldr1, foldMap1, fold1)
 import Data.Maybe (Maybe(..))
+import Data.Either (Either(..), note)
 import Data.Enum (class BoundedEnum, upFromIncluding)
 import Data.Tuple (fst)
 import Data.Tuple.Nested ((/\), type (/\))
@@ -112,7 +121,7 @@ foldEnum = flip foldMap1 ::<+> upFromIncluding bottom
 -- | Analogous to `unfold1` and `unfold`, but with no way to signal termination;
 -- | `unfoldInf f b` consists of `fst $ f b` appended to `unfoldInf f $ snd $ f b`.
 -- |
--- | This should only be used to produce either lazy types (like `Trivial`) or
+-- | This should only be used to produce either lazy types (like lazy `List`s) or
 -- | types with truncating `Unfoldable1` instances (like `Maybe`).
 unfoldrInf :: forall a b u. Unfoldable1 u => (b -> a /\ b) -> b -> u a
 unfoldrInf = unfoldr1 <<< (map Just <<< _)
@@ -120,7 +129,34 @@ unfoldrInf = unfoldr1 <<< (map Just <<< _)
 -- | Create an infinite `Unfoldable1` by repeated application of a function to a seed value. 
 -- | Analogous to `iterateN`, but with no iteration limit.
 -- |
--- | This should only be used to produce either lazy types (like `Trivial`) or
+-- | This should only be used to produce either lazy types (like lazy `List`s) or
 -- | types with truncating `Unfoldable1` instances (like `Maybe`).
 iterate :: forall a u. Unfoldable1 u => (a -> a) -> a -> u a
 iterate f seed = unfoldr1 (map \a -> Just (f a /\ f a)) $ seed /\ seed
+
+-- | Concatenate an `Unfoldable1` with a possibly-empty `Unfoldable`.
+-- |
+-- | Do not use this to create a data structure. Please use Data.List.Lazy instead.
+append1 :: forall a u. Unfoldable1 u => Trivial1 a -> Trivial a -> u a
+append1 t1 = untrivial (untrivial1 eAppend1 t1)
+  where eAppend1 :: forall b b'. Generator1 a b -> b -> Generator a b' -> b' -> u a
+        eAppend1 f seed f' seed' = unfoldr1 appended $ Right seed
+          where appended :: Either (a /\ b') b -> a /\ Maybe (Either (a /\ b') b)
+                appended (Right b)
+                  | a /\ mnb <- f b = a /\ case mnb of
+                      Just nb -> Just $ Right nb
+                      Nothing -> Left <$> f' seed'
+                appended (Left (a /\ b')) = a /\ (Left <$> f' b')
+
+-- | Concatenate a possibly-empty `Unfoldable` with an `Unfoldable1`.
+-- |
+-- | Do not use this to create a data structure. Please use Data.List.Lazy instead.
+append1' :: forall a u. Unfoldable1 u => Trivial a -> Trivial1 a -> u a
+append1' t = untrivial1 (untrivial eAppend1' t)
+  where eAppend1' :: forall b b'. Generator a b -> b -> Generator1 a b' -> b' -> u a
+        eAppend1' f seed f' seed'
+          | Just p <- f seed = unfoldr1 appended $ Right p
+          where appended :: Either b' (a /\ b) -> a /\ Maybe (Either b' (a /\ b))
+                appended (Right (a /\ b)) = a /\ Just (note seed' $ f b)
+                appended (Left b') = map Left <$> f' b'
+          | otherwise = unfoldr1 f' seed'
