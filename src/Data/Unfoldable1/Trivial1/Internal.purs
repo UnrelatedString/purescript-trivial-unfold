@@ -19,6 +19,8 @@ module Data.Unfoldable1.Trivial1.Internal
 
 import Prelude
 
+import Data.Eq (class Eq1, eq1)
+import Data.Ord (class Ord1, ord1)
 import Data.Foldable (class Foldable, foldrDefault, foldMapDefaultL, foldl)
 import Data.Semigroup.Foldable (class Foldable1, foldr1Default, foldMap1DefaultL)
 import Data.Unfoldable1 (class Unfoldable1, unfoldr1)
@@ -180,3 +182,10 @@ instance trivial1Applicative :: Applicative Trivial1 where
 
 instance trivial1Semigroup :: Semigroup (Trivial1 a) where
   append = (<|>)
+
+-- | Does not and cannot memoize the values being produced to compare.
+-- | Please consider using Data.List.Lazy or your strict container of choice
+-- | instead if you have any intention of using this for anything else.
+instance trivial1Eq :: Eq a => Eq (Trivial1 a) where
+  eq = eq1
+
