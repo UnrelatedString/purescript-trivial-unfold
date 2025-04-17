@@ -26,6 +26,7 @@ import Data.Tuple.Nested ((/\), type (/\))
 import Data.Maybe (Maybe(..))
 import Data.Exists (Exists, mkExists, runExists)
 import Data.Bifunctor (lmap)
+import Control.Alternative (class Alt, class Plus, class Alternative, (<|>))
 import Control.Lazy (class Lazy)
 import Test.QuickCheck.Arbitrary (class Arbitrary, class Coarbitrary, arbitrary)
 import Test.QuickCheck.Gen (sized)
@@ -128,3 +129,8 @@ instance trivialArbitrary :: (Arbitrary a, Coarbitrary a) => Arbitrary (Trivial 
 
 instance trivialLazy :: Lazy (Trivial a) where
   defer = flip identity unit
+
+-- -- | Concatenation.
+-- -- |
+-- -- | Do not use this to create a data structure. Please use Data.List.Lazy instead.
+-- instance trivialAlt :: Alt Trivial where

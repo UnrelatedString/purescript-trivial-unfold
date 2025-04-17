@@ -135,6 +135,8 @@ iterate :: forall a u. Unfoldable1 u => (a -> a) -> a -> u a
 iterate f seed = unfoldr1 (map \a -> Just (f a /\ f a)) $ seed /\ seed
 
 -- | Concatenate an `Unfoldable1` with a possibly-empty `Unfoldable`.
+-- |
+-- | Do not use this to create a data structure. Please use Data.List.Lazy instead.
 append1 :: forall a u. Unfoldable1 u => Trivial1 a -> Trivial a -> u a
 append1 t1 = untrivial (untrivial1 eAppend1 t1)
   where eAppend1 :: forall b b'. Generator1 a b -> b -> Generator a b' -> b' -> u a
@@ -147,6 +149,8 @@ append1 t1 = untrivial (untrivial1 eAppend1 t1)
                 appended (Left (a /\ b')) = a /\ (Left <$> f' b')
 
 -- | Concatenate a possibly-empty `Unfoldable` with an `Unfoldable1`.
+-- |
+-- | Do not use this to create a data structure. Please use Data.List.Lazy instead.
 append1' :: forall a u. Unfoldable1 u => Trivial a -> Trivial1 a -> u a
 append1' t = untrivial1 (untrivial eAppend1' t)
   where eAppend1' :: forall b b'. Generator a b -> b -> Generator1 a b' -> b' -> u a

@@ -26,9 +26,11 @@ import Data.Unfoldable (class Unfoldable, none)
 import Data.Tuple (fst, uncurry)
 import Data.Tuple.Nested ((/\), type (/\))
 import Data.Maybe (Maybe(..), maybe)
+import Data.Either (Either(..), note)
 import Data.Exists (Exists, mkExists, runExists)
-import Data.Bifunctor (lmap)
+import Data.Bifunctor (lmap, bimap)
 import Control.Lazy (class Lazy)
+import Control.Alternative (class Alt, (<|>))
 import Test.QuickCheck.Arbitrary (class Arbitrary, class Coarbitrary, arbitrary)
 import Test.QuickCheck.Gen (sized)
 
@@ -138,3 +140,19 @@ instance trivial1Arbitrary :: (Arbitrary a, Coarbitrary a) => Arbitrary (Trivial
 
 instance trivial1Lazy :: Lazy (Trivial1 a) where
   defer = flip identity unit
+
+-- | Concatenation.
+-- |
+-- | Do not use this to create a data structure. Please use Data.List.Lazy instead.
+instance trivial1Alt :: Alt Trivial1 where
+  alt :: forall a. Trivial1 a -> Trivial1 a -> Trivial1 a
+  alt t1 = untrivial1 (untrivial1 eAlt t1)
+    where eAlt :: forall b b'. Generator1 a b -> Generator1 a b' -> Trivial1 a
+          eAlt f seed f' seed' = unfoldr1 appended $ Right seed
+            where appended :: Either b b' -> a /\ Maybe (Either b b')
+                  appended = bimap
+                    (map (Just <<< note seed') <<< f)
+                    (map (map Right) <<< f')
+
+instance trivial1Semigroup :: Semigroup (Trivial1 a) where
+  append = (<|>)
