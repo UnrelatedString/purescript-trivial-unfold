@@ -61,7 +61,7 @@ import Data.Unfoldable.MaybeEmpty
   )
 
 import Data.Maybe (Maybe(..), isJust, isNothing)
-import Control.Alternative ((<|>), guard)
+import Control.Alternative ((<|>), guard, empty)
 import Data.Enum (class Enum, class BoundedEnum, succ, pred, upFrom, downFrom, upFromIncluding, enumFromTo)
 import Data.Tuple (snd)
 import Data.Tuple.Nested ((/\), type (/\))
@@ -75,10 +75,12 @@ import Type.Proxy (Proxy(..))
 import Data.Array (toUnfoldable, zipWith)
 import Data.Monoid.Multiplicative (Multiplicative(..))
 import Data.Newtype (un, ala)
+import Data.Compactable (compact, applyMaybe)
 import Control.Extend (duplicate)
 import Data.Identity (Identity)
 import Data.Distributive (distribute)
 import Data.List.NonEmpty as NEL
+import Data.Eq (class Eq1)
 
 iff :: forall a. Boolean -> a -> Maybe a
 iff = ($>) <<< guard
@@ -98,6 +100,7 @@ main = runSpecAndExitProcess [prettyReporter] do
   applySuite
   enumSuite
   newtypesSuite
+  filterSuite
   exampleInTheReadmeTest
 
 smallSuite :: Spec Unit
@@ -202,6 +205,10 @@ applySuite = describe "Apply and Applicative" do
   it "Apply Trivial1 agrees with zipWith on arrays" do
     quickCheck \(f :: String -> Char -> Int) a b -> runTrivial1 (f <$> a <*> b) === zipWith f (runTrivial1 a) (runTrivial1 b)
 
+genericApplicativeLaws :: forall t. Eq1 t => Applicative t => String -> Proxy t -> Spec Unit
+genericApplicativeLaws name _ = describe ("Applicative " <> name <> " identities") do
+  pure unit
+  -- okay yeah no I'm just going to write an Eq instance it's like basically the same thing anywayss"
 
 enumSuite :: Spec Unit
 enumSuite = describe "enums" do
@@ -242,7 +249,7 @@ newtypesSuite = describe "Newtypes" do
     quickCheck \(x :: Trivial Int) -> un MaybeEmpty (runTrivial x) === duplicate (runTrivial x)
   it "NonEmptyList always roundtrips intact" do
     quickCheck \(x :: NEL.NonEmptyList String) -> un MaybeEmpty (NEL.toUnfoldable x) === Just x
-  it ("distributeMaybes would agree with Distributive Identity..." <>
+  it ("distributeMaybes would agree with Distributive Identity... " <>
         "if Identity had an Unfoldable1 instance, which it just doesn't for some reason") do
     quickCheck \(x :: Maybe (Identity Char)) -> distributeMaybesA (MaybeEmpty x) === distribute x
   it "toAlternative agrees with Monad Array" do
@@ -253,6 +260,21 @@ newtypesSuite = describe "Newtypes" do
     quickCheck \(x :: Trivial Char) (f :: Char -> Int -> Int) y -> foldr f y (the x) === foldr f y x
     quickCheck \(x :: Trivial Char) (f :: Int -> Char -> Int) y -> foldl f y (the x) === foldl f y x
     quickCheck \(x :: Trivial Char) (f :: Char -> String) -> foldMap f (the x) === foldMap f x
+
+filterSuite :: Spec Unit
+filterSuite = describe "Compactable and Filterable" do
+  it "Functor identity: compact <<< map Just ≡ id" do
+    quickCheck \(x :: Trivial String) -> runTrivial (compact ::<*> map Just x) === (runTrivial :: Trivial String -> Array String) x
+  it "Applicative identity: compact <<< (pure Just <*> _) ≡ id" do
+    quickCheck \(x :: Trivial Int) -> arrgh (compact $ pure Just <*> x) === arrgh x
+  it "Applicative identity: applyMaybe (pure Just) ≡ id" do
+    quickCheck \(x :: Trivial Int) -> arrgh (applyMaybe (pure Just) x) === arrgh x
+  it "Applicative identity: compact ≡ applyMaybe (pure id)" do
+    quickCheck \(x :: Trivial (Maybe String)) -> arrgh (compact x) === arrgh (applyMaybe (pure identity) x)
+  it "Plus identity: compact empty ≡ empty" do
+    runTrivial (compact empty) `shouldEqual` ([] :: Array Int)
+  it "Plus identity: compact (const Nothing <$> xs) ≡ empty, except ^" do
+    quickCheck \(x :: Trivial Char) -> runTrivial (compact (const (Nothing :: Maybe Char) <$> x)) === []
 
 -- because it would be ESPECIALLY embarrassing if this didn't work :P
 exampleInTheReadmeTest :: Spec Unit

@@ -21,13 +21,14 @@ import Prelude
 
 import Data.Foldable (class Foldable, foldrDefault, foldMapDefaultL, foldl)
 import Data.Semigroup.Foldable (class Foldable1, foldr1Default, foldMap1DefaultL)
-import Data.Unfoldable1 (class Unfoldable1, unfoldr1, singleton)
+import Data.Unfoldable1 (class Unfoldable1, unfoldr1)
 import Data.Unfoldable (class Unfoldable, none)
 import Data.Tuple (fst, uncurry)
 import Data.Tuple.Nested ((/\), type (/\))
 import Data.Maybe (Maybe(..), maybe)
 import Data.Either (Either(..), note, either)
 import Data.Exists (Exists, mkExists, runExists)
+import Data.Functor.Invariant (class Invariant, imapF)
 import Data.Bifunctor (lmap, bimap)
 import Control.Lazy (class Lazy)
 import Control.Alternative (class Alt, (<|>))
@@ -83,6 +84,9 @@ instance trivial1Functor :: Functor Trivial1 where
                         $ Unfoldr1Call (
                           lmap f <<< g
                         ) seed
+
+instance trivial1Invariant :: Invariant Trivial1 where
+  imap = imapF
 
 -- | Converts to any other `Unfoldable1`.
 -- | Can also be seen as evaluating the inner `Unfoldr1Call`.
@@ -169,8 +173,10 @@ instance trivial1Apply :: Apply Trivial1 where
             where applied :: b /\ b' -> c /\ Maybe (b /\ b')
                   applied = uncurry (bilift2 identity (lift2 (/\))) <<< bimap f f'
 
+-- | Infinitely cycles to satisfy the Applicative laws!
+-- | If you just want one element, use `singleton` instead.
 instance trivial1Applicative :: Applicative Trivial1 where
-  pure = singleton
+  pure a = unfoldr1 (const $ a /\ Just unit) unit
 
 instance trivial1Semigroup :: Semigroup (Trivial1 a) where
   append = (<|>)

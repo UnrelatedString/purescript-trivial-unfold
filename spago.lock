@@ -21,6 +21,9 @@
               "exists": ">=6.0.0 <7.0.0"
             },
             {
+              "filterable": ">=5.0.0 <6.0.0"
+            },
+            {
               "foldable-traversable": ">=6.0.0 <7.0.0"
             },
             {
@@ -58,6 +61,7 @@
             "enums",
             "exceptions",
             "exists",
+            "filterable",
             "foldable-traversable",
             "functions",
             "functors",
@@ -72,6 +76,7 @@
             "newtype",
             "nonempty",
             "numbers",
+            "ordered-collections",
             "orders",
             "partial",
             "prelude",
@@ -126,6 +131,7 @@
             "exceptions",
             "exists",
             "exitcodes",
+            "filterable",
             "foldable-traversable",
             "foreign",
             "foreign-object",
@@ -994,6 +1000,19 @@
       "integrity": "sha256-4wxViTbyOoyKJ/WaRGI6+hZmgMKI5Miv16lSwefiLSM=",
       "dependencies": [
         "enums"
+      ]
+    },
+    "filterable": {
+      "type": "registry",
+      "version": "5.0.0",
+      "integrity": "sha256-cCojJHRnTmpY1j1kegI4CFwghdQ2Fm/8dzM8IlC+lng=",
+      "dependencies": [
+        "arrays",
+        "either",
+        "foldable-traversable",
+        "identity",
+        "lists",
+        "ordered-collections"
       ]
     },
     "foldable-traversable": {

@@ -24,15 +24,22 @@ import Data.Unfoldable
   (class Unfoldable
   , class Unfoldable1
   , unfoldr
-  , singleton
   , none
   )
 import Data.Tuple (uncurry)
 import Data.Tuple.Nested ((/\), type (/\))
 import Data.Maybe (Maybe(..), maybe')
-import Data.Either (Either(..), either)
 import Data.Exists (Exists, mkExists, runExists)
 import Data.Bifunctor (lmap)
+import Data.Functor.Invariant (class Invariant, imapF)
+import Data.Compactable (class Compactable, separateDefault)
+import Data.Filterable
+  ( class Filterable
+  , partitionDefaultFilterMap
+  , partitionMapDefault
+  , filterMapDefault
+  )
+import Data.Either (Either(..), either)
 import Control.Alternative (class Alt, class Plus, class Alternative, (<|>))
 import Control.Lazy (class Lazy)
 import Test.QuickCheck.Arbitrary (class Arbitrary, class Coarbitrary, arbitrary)
@@ -87,6 +94,9 @@ instance trivialFunctor :: Functor Trivial where
                           map (lmap f) <<< g
                         ) seed
 
+instance trivialInvariant :: Invariant Trivial where
+  imap = imapF
+
 -- | Provides a default implementation of `unfoldr1` using `unfoldr` to satisfy
 -- | the superclass bound on `Unfoldable`.
 unfoldr1Default :: forall a b t. Unfoldable t => (b -> a /\ Maybe b) -> b -> t a
@@ -137,6 +147,42 @@ instance trivialArbitrary :: (Arbitrary a, Coarbitrary a) => Arbitrary (Trivial 
 instance trivialLazy :: Lazy (Trivial a) where
   defer = (#) unit
 
+instance trivialCompactable :: Compactable Trivial where
+  -- | Filters elements as they're produced
+  compact :: forall a. Trivial (Maybe a) -> Trivial a
+  compact = untrivial eCompact
+    where eCompact :: forall b. Generator (Maybe a) b -> b -> Trivial a
+          eCompact f seed = unfoldr filtering seed
+            where filtering :: b -> Maybe (a /\ b)
+                  filtering b
+                    | Just (a /\ b') <- f b =
+                        maybe'
+                          (\_ -> filtering b')
+                          (Just <<< (_ /\ b'))
+                          a
+                    | otherwise = Nothing
+  -- | Default implementation, essentially running two separate filters.
+  -- | Not great, but inherently can't do better without an intermediate container
+  -- | (or emulating such with some massive thunk buildup)
+  -- | -- which you probably do want at that point!
+  separate t = separateDefault t
+
+instance trivialFilterable :: Filterable Trivial where
+  partitionMap p = partitionMapDefault p
+  partition p = partitionDefaultFilterMap p
+  filterMap p = filterMapDefault p
+  filter :: forall a. (a -> Boolean) -> Trivial a -> Trivial a
+  filter p = untrivial eFilter
+    where eFilter :: forall b. Generator a b -> b -> Trivial a
+          eFilter f seed = unfoldr filtering seed
+            where filtering :: b -> Maybe (a /\ b)
+                  filtering b
+                    | Just (a /\ b') <- f b =
+                        if p a
+                        then Just (a /\ b')
+                        else filtering b'
+                    | otherwise = Nothing
+
 -- | Concatenation.
 -- |
 -- | Do not use this to create a data structure. Please use Data.List.Lazy instead.
@@ -178,7 +224,9 @@ instance trivialApply :: Apply Trivial where
                     a /\ nb' <- f' b'
                     Just $ g a /\ nb /\ nb'
 
+-- | Infinitely cycles to satisfy the Applicative laws!
+-- | If you just want one element, use `singleton` instead.
 instance trivialApplicative :: Applicative Trivial where
-  pure = singleton
+  pure a = unfoldr (const $ Just $ a /\ unit) unit
 
 instance trivialAlternative :: Alternative Trivial

@@ -2,6 +2,7 @@ module Data.Unfoldable.MaybeEmpty
   ( MaybeEmpty(..)
   , maybeEmpty
   , maybeEmpty'
+  , justNonempty
   , distributeMaybes
   , distributeMaybesA
   , toAlternative
@@ -32,9 +33,9 @@ import Data.Unfoldable
   )
 import Data.Unfoldable.Trivial (cons)
 
--- | Lift an `Unfoldable1` into an `Unfoldable` by wrapping it in `Maybe`,
--- | such that an empty sequence gives `Nothing` and a nonempty sequence gives
--- | a nonempty `Unfoldable1` in `Just`.
+-- | Lifts a nonempty container into a possibly-empty container by wrapping it in `Maybe`.
+-- | such that an empty sequence corresponds to `Nothing` and a nonempty sequence
+-- | corresponds to the nonempty container in a `Just`.
 newtype MaybeEmpty :: forall k. (k -> Type) -> k -> Type
 newtype MaybeEmpty f a = MaybeEmpty (Maybe (f a))
 
@@ -118,7 +119,11 @@ maybeEmpty d f = maybe d f <<< unwrap
 maybeEmpty' :: forall f a b. (Unit -> b) -> (f a -> b) -> MaybeEmpty f a -> b
 maybeEmpty' d f = maybe' d f <<< unwrap
 
--- | Creates an `f` containing a single `Nothing` if empty.
+-- | Wrap an existing container into a `MaybeEmpty`.
+justNonempty :: forall f a. f a -> MaybeEmpty f a
+justNonempty = MaybeEmpty <<< Just
+
+-- | Create an `f` containing a single `Nothing` if empty.
 -- |
 -- | Although Data.Unfoldable calls them "unfoldable functors", `Functor` isn't actually
 -- | a superclass of `Unfoldable1`. On the off chance that you for some reason do in fact
@@ -128,16 +133,16 @@ distributeMaybes :: forall f a. Unfoldable1 f => Functor f => MaybeEmpty f a -> 
 distributeMaybes (MaybeEmpty (Just x)) = Just <$> x
 distributeMaybes (MaybeEmpty Nothing) = singleton Nothing
 
--- | Creates an `f` containing `Nothing` if empty, using `pure` instead of `singleton`.
+-- | Create an `f` containing `Nothing` if empty, using `pure` instead of `singleton`.
 distributeMaybesA :: forall f a. Applicative f => MaybeEmpty f a -> f (Maybe a)
 distributeMaybesA (MaybeEmpty (Just x)) = Just <$> x
 distributeMaybesA (MaybeEmpty Nothing) = pure Nothing
 
--- | Unwraps and converts the inner `Maybe` into an alternative `Alternative`. *(ba dum tss)*
+-- | Unwrap and convert the inner `Maybe` into an alternative `Alternative`. *(ba dum tss)*
 toAlternative :: forall u f a. Alternative f => MaybeEmpty u a -> f (u a)
 toAlternative (MaybeEmpty (Just x)) = pure x
 toAlternative (MaybeEmpty Nothing) = empty
 
--- | Applies a function to the inner container if present.
+-- | Apply a function to the inner container if present.
 maybeOver :: forall f g a b. (f a -> g b) -> MaybeEmpty f a -> MaybeEmpty g b
 maybeOver = over MaybeEmpty <<< map
