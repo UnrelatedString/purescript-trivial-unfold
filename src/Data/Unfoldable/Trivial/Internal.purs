@@ -24,7 +24,6 @@ import Data.Unfoldable
   (class Unfoldable
   , class Unfoldable1
   , unfoldr
-  , singleton
   , none
   )
 import Data.Tuple (uncurry)
@@ -225,7 +224,9 @@ instance trivialApply :: Apply Trivial where
                     a /\ nb' <- f' b'
                     Just $ g a /\ nb /\ nb'
 
+-- | Infinitely cycles to satisfy the Applicative laws!
+-- | If you just want one element, use `singleton` instead.
 instance trivialApplicative :: Applicative Trivial where
-  pure = singleton
+  pure a = unfoldr (const $ Just $ a /\ unit) unit
 
 instance trivialAlternative :: Alternative Trivial
