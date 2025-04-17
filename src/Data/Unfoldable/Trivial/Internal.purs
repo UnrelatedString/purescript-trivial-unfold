@@ -144,7 +144,7 @@ instance trivialAlt :: Alt Trivial where
                     (map (map Left) <<< f')
                     (maybe'
                       (\_ -> map Left <$> f' seed')
-                      (Just <<< map (map Right))
+                      (uncurry \a b -> Just (a /\ Right b))
                     <<< f)
 
 instance trivialPlus :: Plus Trivial where

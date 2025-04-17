@@ -10,6 +10,7 @@ module Data.Unfoldable.Trivial
   , take
   , cons
   , snoc
+  , append'
   , uncons
   , index
   , drop
