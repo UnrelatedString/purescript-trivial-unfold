@@ -49,6 +49,8 @@ import Data.Unfoldable.Trivial
   , take
   , take1
   , index1
+  , append1
+  , append1'
   , drop
   )
 
@@ -84,11 +86,15 @@ iff = ($>) <<< guard
 oughta :: forall f m t. Functor f => Show (f (AnyShow t)) => MonadThrow Effect.Exception.Error m => f t -> (f (AnyShow t) -> Boolean) -> m Unit
 oughta = map AnyShow >>> shouldSatisfy
 
+arrgh :: forall a. Trivial a -> Array a
+arrgh = runTrivial
+
 main :: Effect Unit
 main = runSpecAndExitProcess [prettyReporter] do
   smallSuite
   buildSuite
   foldSuite
+  appendSuite
   enumSuite
   newtypesSuite
   exampleInTheReadmeTest
@@ -176,6 +182,14 @@ foldSuite = describe "foldl foldr" do
     it "singleton folds" do 
       quickCheck \f (x :: Int) -> (foldl1 f ::<+> singleton x) === x
       quickCheck \f (x :: Int) -> (foldr1 f ::<+> singleton x) === x
+
+appendSuite :: Spec Unit
+appendSuite = describe "appends (incl. Semigroup and Monoid)" do
+  it "append1 agrees with Alt Array" do
+    quickCheck \(a :: Trivial1 Char) (b :: Trivial Char) -> runTrivial1 (a `append1` b) === runTrivial1 a <|> arrgh b
+  -- writing this one now specifically so I don't forget to write the real impl LMAO
+  it "append1' agrees with Alt Array" do
+    quickCheck \(a :: Trivial Char) (b :: Trivial1 Char) -> runTrivial1 (a `append1'` b) === arrgh a <|> runTrivial1 b
 
 enumSuite :: Spec Unit
 enumSuite = describe "enums" do
