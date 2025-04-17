@@ -142,7 +142,10 @@ instance trivialAlt :: Alt Trivial where
             where appended :: Either b' b -> Maybe (a /\ Either b' b)
                   appended = either
                     (map (map Left) <<< f')
-                    (maybe' (\_ -> map Left <$> f' seed') (map $ map Right) <<< f)
+                    (maybe'
+                      (\_ -> map Left <$> f' seed')
+                      (Just <<< map (map Right))
+                    <<< f)
 
 instance trivialPlus :: Plus Trivial where
   empty = none
