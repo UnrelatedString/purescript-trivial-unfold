@@ -184,7 +184,9 @@ foldSuite = describe "foldl foldr" do
       quickCheck \f (x :: Int) -> (foldr1 f ::<+> singleton x) === x
 
 appendSuite :: Spec Unit
-appendSuite = describe "appends (incl. Semigroup and Monoid)" do
+appendSuite = describe "appends (incl. Semigroup/Alt)" do
+  it "Alt Trivial1 agrees with Alt Array" do
+    quickCheck \(a :: Trivial1 Char) b -> runTrivial1 (a <|> b) === [] <|> runTrivial1 a <|> runTrivial1 b
   it "append1 agrees with Alt Array" do
     quickCheck \(a :: Trivial1 Char) (b :: Trivial Char) -> runTrivial1 (a `append1` b) === runTrivial1 a <|> arrgh b
   it "append1' agrees with Alt Array" do
