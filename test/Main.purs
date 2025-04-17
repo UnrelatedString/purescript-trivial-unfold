@@ -75,7 +75,7 @@ import Type.Proxy (Proxy(..))
 import Data.Array (toUnfoldable, zipWith)
 import Data.Monoid.Multiplicative (Multiplicative(..))
 import Data.Newtype (un, ala)
-import Data.Compactable (compact)
+import Data.Compactable (compact, applyMaybe)
 import Control.Extend (duplicate)
 import Data.Identity (Identity)
 import Data.Distributive (distribute)
@@ -260,6 +260,12 @@ filterSuite :: Spec Unit
 filterSuite = describe "Compactable and Filterable" do
   it "Functor identity: compact <<< map Just ≡ id" do
     quickCheck \(x :: Trivial String) -> runTrivial (compact ::<*> map Just x) === (runTrivial :: Trivial String -> Array String) x
+  it "Applicative identity: compact <<< (pure Just <*> _) ≡ id" do
+    quickCheck \(x :: Trivial Int) -> arrgh (compact $ pure Just <*> x) === arrgh x
+  it "Applicative identity: applyMaybe (pure Just) ≡ id" do
+    quickCheck \(x :: Trivial Int) -> arrgh (applyMaybe (pure Just) x) === arrgh x
+  it "Applicative identity: compact ≡ applyMaybe (pure id)" do
+    quickCheck \(x :: Trivial (Maybe String)) -> arrgh (compact x) === arrgh (applyMaybe (pure identity) x)
   it "Plus identity: compact empty ≡ empty" do
     runTrivial (compact empty) `shouldEqual` ([] :: Array Int)
   it "Plus identity: compact (const Nothing <$> xs) ≡ empty, except ^" do
