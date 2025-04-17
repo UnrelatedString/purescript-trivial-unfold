@@ -43,7 +43,7 @@ import Data.Unfoldable.Trivial.Internal
 import Data.Unfoldable1 (class Unfoldable1, unfoldr1)
 import Data.Semigroup.Foldable (foldl1, foldr1, foldMap1, fold1)
 import Data.Maybe (Maybe(..))
-import Data.Either (Either(..))
+import Data.Either (Either(..), note)
 import Data.Enum (class BoundedEnum, upFromIncluding)
 import Data.Tuple (fst)
 import Data.Tuple.Nested ((/\), type (/\))
@@ -148,4 +148,11 @@ append1 t1 = untrivial (untrivial1 eAppend1 t1)
 
 -- | Concatenate a possibly-empty `Unfoldable` with an `Unfoldable1`.
 append1' :: forall a u. Unfoldable1 u => Trivial a -> Trivial1 a -> u a
-append1' = flip append1 -- placeholder LMAOOO why did I do this before the actual Semigroup instanceeee
+append1' t = untrivial1 (untrivial eAppend1' t)
+  where eAppend1' :: forall b b'. Generator a b -> b -> Generator1 a b' -> b' -> u a
+        eAppend1' f seed f' seed'
+          | Just p <- f seed = unfoldr1 appended $ Right p
+          where appended :: Either b' (a /\ b) -> a /\ Maybe (Either b' (a /\ b))
+                appended (Right (a /\ b)) = a /\ Just (note seed' $ f b)
+                appended (Left b') = map Left <$> f' b'
+          | otherwise = unfoldr1 f' seed'

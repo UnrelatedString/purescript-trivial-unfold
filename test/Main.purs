@@ -187,7 +187,6 @@ appendSuite :: Spec Unit
 appendSuite = describe "appends (incl. Semigroup and Monoid)" do
   it "append1 agrees with Alt Array" do
     quickCheck \(a :: Trivial1 Char) (b :: Trivial Char) -> runTrivial1 (a `append1` b) === runTrivial1 a <|> arrgh b
-  -- writing this one now specifically so I don't forget to write the real impl LMAO
   it "append1' agrees with Alt Array" do
     quickCheck \(a :: Trivial Char) (b :: Trivial1 Char) -> runTrivial1 (a `append1'` b) === arrgh a <|> runTrivial1 b
 
