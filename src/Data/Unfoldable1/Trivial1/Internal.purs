@@ -21,15 +21,19 @@ import Prelude
 
 import Data.Foldable (class Foldable, foldrDefault, foldMapDefaultL, foldl)
 import Data.Semigroup.Foldable (class Foldable1, foldr1Default, foldMap1DefaultL)
-import Data.Unfoldable1 (class Unfoldable1, unfoldr1)
+import Data.Unfoldable1 (class Unfoldable1, unfoldr1, singleton)
 import Data.Unfoldable (class Unfoldable, none)
 import Data.Tuple (fst, uncurry)
 import Data.Tuple.Nested ((/\), type (/\))
 import Data.Maybe (Maybe(..), maybe)
+import Data.Either (Either(..), note, either)
 import Data.Exists (Exists, mkExists, runExists)
-import Data.Bifunctor (lmap)
 import Data.Functor.Invariant (class Invariant, imapF)
+import Data.Bifunctor (lmap, bimap)
 import Control.Lazy (class Lazy)
+import Control.Alternative (class Alt, (<|>))
+import Control.Apply (lift2)
+import Control.Biapply (bilift2)
 import Test.QuickCheck.Arbitrary (class Arbitrary, class Coarbitrary, arbitrary)
 import Test.QuickCheck.Gen (sized)
 
@@ -141,4 +145,36 @@ instance trivial1Arbitrary :: (Arbitrary a, Coarbitrary a) => Arbitrary (Trivial
     ) $ 0 /\ seed
 
 instance trivial1Lazy :: Lazy (Trivial1 a) where
-  defer = flip identity unit
+  defer = (#) unit
+
+-- | Concatenation.
+-- |
+-- | Do not use this to create a data structure. Please use Data.List.Lazy instead.
+instance trivial1Alt :: Alt Trivial1 where
+  alt :: forall a. Trivial1 a -> Trivial1 a -> Trivial1 a
+  alt t1 = untrivial1 (untrivial1 eAlt t1)
+    where eAlt :: forall b b'. Generator1 a b -> b -> Generator1 a b' -> b' -> Trivial1 a
+          eAlt f seed f' seed' = unfoldr1 appended $ Right seed
+            where appended :: Either b' b -> a /\ Maybe (Either b' b)
+                  appended = either
+                    (map (map Left) <<< f')
+                    (map (Just <<< note seed') <<< f)
+
+-- | Zipwith; chosen over the `Monad`-compatible nondet choice used for `Array` etc.
+-- | because that would require effectively forcing one argument and either
+-- | re-evaluating it constantly or storing its elements in a real container
+-- | at which point please please please just do that without using `Trivial1`.
+-- | Length is the minimum of the arguments' lengths.
+instance trivial1Apply :: Apply Trivial1 where
+  apply :: forall a c. Trivial1 (a -> c) -> Trivial1 a -> Trivial1 c
+  apply tg = untrivial1 (untrivial1 eApply tg)
+    where eApply :: forall b b'. Generator1 (a -> c) b -> b -> Generator1 a b' -> b' -> Trivial1 c
+          eApply f seed f' seed' = unfoldr1 applied $ seed /\ seed'
+            where applied :: b /\ b' -> c /\ Maybe (b /\ b')
+                  applied = uncurry (bilift2 identity (lift2 (/\))) <<< bimap f f'
+
+instance trivial1Applicative :: Applicative Trivial1 where
+  pure = singleton
+
+instance trivial1Semigroup :: Semigroup (Trivial1 a) where
+  append = (<|>)

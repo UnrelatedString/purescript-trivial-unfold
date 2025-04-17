@@ -20,7 +20,13 @@ module Data.Unfoldable.Trivial.Internal
 import Prelude
 
 import Data.Foldable (class Foldable, foldrDefault, foldMapDefaultL)
-import Data.Unfoldable (class Unfoldable, class Unfoldable1, unfoldr)
+import Data.Unfoldable
+  (class Unfoldable
+  , class Unfoldable1
+  , unfoldr
+  , singleton
+  , none
+  )
 import Data.Tuple (uncurry)
 import Data.Tuple.Nested ((/\), type (/\))
 import Data.Maybe (Maybe(..), maybe')
@@ -34,6 +40,8 @@ import Data.Filterable
   , partitionMapDefault
   , filterMapDefault
   )
+import Data.Either (Either(..), either)
+import Control.Alternative (class Alt, class Plus, class Alternative, (<|>))
 import Control.Lazy (class Lazy)
 import Test.QuickCheck.Arbitrary (class Arbitrary, class Coarbitrary, arbitrary)
 import Test.QuickCheck.Gen (sized)
@@ -138,7 +146,7 @@ instance trivialArbitrary :: (Arbitrary a, Coarbitrary a) => Arbitrary (Trivial 
     ) $ 0 /\ seed
 
 instance trivialLazy :: Lazy (Trivial a) where
-  defer = flip identity unit
+  defer = (#) unit
 
 instance trivialCompactable :: Compactable Trivial where
   -- | Filters elements as they're produced
@@ -175,3 +183,49 @@ instance trivialFilterable :: Filterable Trivial where
                         then Just (a /\ b')
                         else filtering b'
                     | otherwise = Nothing
+
+-- | Concatenation.
+-- |
+-- | Do not use this to create a data structure. Please use Data.List.Lazy instead.
+instance trivialAlt :: Alt Trivial where
+  alt :: forall a. Trivial a -> Trivial a -> Trivial a
+  alt t = untrivial (untrivial eAlt t)
+    where eAlt :: forall b b'. Generator a b -> b -> Generator a b' -> b' -> Trivial a
+          eAlt f seed f' seed' = unfoldr appended $ Right seed
+            where appended :: Either b' b -> Maybe (a /\ Either b' b)
+                  appended = either
+                    (map (map Left) <<< f')
+                    (maybe'
+                      (\_ -> map Left <$> f' seed')
+                      (uncurry \a b -> Just (a /\ Right b))
+                    <<< f)
+
+instance trivialPlus :: Plus Trivial where
+  empty = none
+
+instance trivialSemigroup :: Semigroup (Trivial a) where
+  append = (<|>)
+
+instance trivialMonoid :: Monoid (Trivial a) where
+  mempty = none
+
+-- | Zipwith; chosen over the `Monad`-compatible nondet choice used for `Array` etc.
+-- | because that would require effectively forcing one argument and either
+-- | re-evaluating it constantly or storing its elements in a real container
+-- | at which point please please please just do that without using `Trivial`.
+-- | Length is the minimum of the arguments' lengths.
+instance trivialApply :: Apply Trivial where
+  apply :: forall a c. Trivial (a -> c) -> Trivial a -> Trivial c
+  apply tg = untrivial (untrivial eApply tg)
+    where eApply :: forall b b'. Generator (a -> c) b -> b -> Generator a b' -> b' -> Trivial c
+          eApply f seed f' seed' = unfoldr (uncurry applied) $ seed /\ seed'
+            where applied :: b -> b' -> Maybe (c /\ b /\ b')
+                  applied b b' = do
+                    g /\ nb <- f b
+                    a /\ nb' <- f' b'
+                    Just $ g a /\ nb /\ nb'
+
+instance trivialApplicative :: Applicative Trivial where
+  pure = singleton
+
+instance trivialAlternative :: Alternative Trivial
