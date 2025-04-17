@@ -26,9 +26,9 @@ import Data.Unfoldable (class Unfoldable, none)
 import Data.Tuple (fst, uncurry)
 import Data.Tuple.Nested ((/\), type (/\))
 import Data.Maybe (Maybe(..), maybe)
-import Data.Either (Either(..), note)
+import Data.Either (Either(..), note, either)
 import Data.Exists (Exists, mkExists, runExists)
-import Data.Bifunctor (lmap, bimap)
+import Data.Bifunctor (lmap)
 import Control.Lazy (class Lazy)
 import Control.Alternative (class Alt, (<|>))
 import Test.QuickCheck.Arbitrary (class Arbitrary, class Coarbitrary, arbitrary)
@@ -149,10 +149,10 @@ instance trivial1Alt :: Alt Trivial1 where
   alt t1 = untrivial1 (untrivial1 eAlt t1)
     where eAlt :: forall b b'. Generator1 a b -> Generator1 a b' -> Trivial1 a
           eAlt f seed f' seed' = unfoldr1 appended $ Right seed
-            where appended :: Either b b' -> a /\ Maybe (Either b b')
-                  appended = bimap
+            where appended :: Either b' b -> a /\ Maybe (Either b' b)
+                  appended = either
+                    (map (map Left) <<< f')
                     (map (Just <<< note seed') <<< f)
-                    (map (map Right) <<< f')
 
 instance trivial1Semigroup :: Semigroup (Trivial1 a) where
   append = (<|>)
