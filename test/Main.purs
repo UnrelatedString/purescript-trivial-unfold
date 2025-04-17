@@ -234,10 +234,11 @@ filterSuite :: Spec Unit
 filterSuite = describe "Compactable and Filterable" do
   it "Functor identity: compact <<< map Just ≡ id" do
     quickCheck \(x :: Trivial String) -> runTrivial (compact ::<*> map Just x) === (runTrivial :: Trivial String -> Array String) x
-  -- wait what if I did like a zipwith Applicative instance oooh this is tempting but in a bad way that's stupid
-  it "Plus identities, except with none instead of empty because it's not actually Plus (just use lazy lists at that point)" do
+  -- wait what if I did like a zipwith Applicative instance oooh this is tempting but in a bad way that's stupid except likeeeee
+  it "Plus identity: compact empty ≡ empty, except with none instead of empty because it's not actually Plus (just use lazy lists at that point) (except it's not like I don't already have cons/snoc anyways and it could be fun to have like concat1 and concat1' for making something guaranteed nonempty from only one thing that is and also like I did literally make a monoid branch so I've been planning to do this but just not RIGHT now)" do
     runTrivial (compact none) `shouldEqual` ([] :: Array Int)
-    --quickCheck \(x :: Trivial Char) -> 
+  it "Plus identity: compact (const Nothing <$> xs) ≡ empty, except ^" do
+    quickCheck \(x :: Trivial Char) -> runTrivial (compact (const (Nothing :: Maybe Char) <$> x)) === []
 
 -- because it would be ESPECIALLY embarrassing if this didn't work :P
 exampleInTheReadmeTest :: Spec Unit
