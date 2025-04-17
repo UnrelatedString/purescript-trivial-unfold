@@ -147,7 +147,7 @@ instance trivial1Lazy :: Lazy (Trivial1 a) where
 instance trivial1Alt :: Alt Trivial1 where
   alt :: forall a. Trivial1 a -> Trivial1 a -> Trivial1 a
   alt t1 = untrivial1 (untrivial1 eAlt t1)
-    where eAlt :: forall b b'. Generator1 a b -> Generator1 a b' -> Trivial1 a
+    where eAlt :: forall b b'. Generator1 a b -> b -> Generator1 a b' -> b' -> Trivial1 a
           eAlt f seed f' seed' = unfoldr1 appended $ Right seed
             where appended :: Either b' b -> a /\ Maybe (Either b' b)
                   appended = either
