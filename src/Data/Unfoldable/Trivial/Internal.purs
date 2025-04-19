@@ -262,5 +262,6 @@ instance trivialOrd1 :: Ord1 Trivial where
               Nothing /\ Nothing -> EQ
               Just (a /\ nb) /\ Just (a' /\ nb')
                 | a == a' -> eCompare1 f nb f' nb'
+                | otherwise -> a `compare` a'
               _ /\ Nothing -> LT
               _ /\ Just _ -> GT
