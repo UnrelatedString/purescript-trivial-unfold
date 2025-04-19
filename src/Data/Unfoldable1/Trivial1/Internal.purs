@@ -189,8 +189,8 @@ instance trivial1Semigroup :: Semigroup (Trivial1 a) where
 instance trivial1Eq :: Eq a => Eq (Trivial1 a) where
   eq = eq1
 
--- instance trivial1Ord :: Ord a => Ord (Trivial1 a) where
---   compare = compare1
+instance trivial1Ord :: Ord a => Ord (Trivial1 a) where
+  compare = compare1
 
 instance trivial1Eq1 :: Eq1 Trivial1 where
   eq1 :: forall a. Eq a => Trivial1 a -> Trivial1 a -> Boolean
@@ -199,5 +199,18 @@ instance trivial1Eq1 :: Eq1 Trivial1 where
           eEq1 f b f' b' =
             case f b /\ f' b' of
               (a /\ Nothing) /\ a' /\ Nothing -> a == a'
-              (a /\ Just nb) /\ a' /\ Just nb' -> a == a' && eEq1 f nb f' nb'
+              (a /\ Just nb) /\ a' /\ Just nb'
+                | a == a' -> eEq1 f nb f' nb' -- && does short circuit but I don't want to count on it
               _ -> false
+
+instance trivial1Ord1 :: Ord1 Trivial1 where
+  compare1 :: forall a. Ord a => Trivial1 a -> Trivial1 a -> Ordering
+  compare1 t1 = untrivial1 (untrivial1 eCompare1 t1)
+    where eCompare1 :: forall b b'. Generator1 a b -> b -> Generator1 a b' -> b' -> Ordering
+          eCompare1 f b f' b' =
+            case f b /\ f' b' of
+              (a /\ Nothing) /\ a' /\ Nothing -> a `compare` a'
+              (a /\ Just nb) /\ a' /\ Just nb'
+                | a == a' -> eCompare1 f nb f' nb'
+              _ /\ _ /\ Nothing -> LT
+              _ /\ _ /\ Just _ -> GT
