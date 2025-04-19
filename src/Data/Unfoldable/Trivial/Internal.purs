@@ -232,3 +232,35 @@ instance trivialApplicative :: Applicative Trivial where
   pure a = unfoldr (const $ Just $ a /\ unit) unit
 
 instance trivialAlternative :: Alternative Trivial
+
+-- | Does not and cannot memoize the values being produced to compare.
+-- | Please consider using Data.List.Lazy or your strict container of choice
+-- | instead if you have any intention of using this for anything else.
+instance trivialEq :: Eq a => Eq (Trivial a) where
+  eq = eq1
+
+instance trivialOrd :: Ord a => Ord (Trivial a) where
+  compare = compare1
+
+instance trivialEq1 :: Eq1 Trivial where
+  eq1 :: forall a. Eq a => Trivial a -> Trivial a -> Boolean
+  eq1 t = untrivial (untrivial eEq1 t)
+    where eEq1 :: forall b b'. Generator a b -> b -> Generator a b' -> b' -> Boolean
+          eEq1 f b f' b' =
+            case f b /\ f' b' of
+              Nothing /\ Nothing -> true
+              Just (a /\ nb) /\ Just (a' /\ nb')
+                | a == a' -> eEq1 f nb f' nb' -- && does short circuit but I don't want to count on it
+              _ -> false
+
+instance trivialOrd1 :: Ord1 Trivial where
+  compare1 :: forall a. Ord a => Trivial a -> Trivial a -> Ordering
+  compare1 t = untrivial (untrivial eCompare1 t)
+    where eCompare1 :: forall b b'. Generator a b -> b -> Generator a b' -> b' -> Ordering
+          eCompare1 f b f' b' =
+            case f b /\ f' b' of
+              Nothing /\ Nothing -> EQ
+              Just (a /\ nb) /\ Just (a' /\ nb')
+                | a == a' -> eCompare1 f nb f' nb'
+              _ /\ Nothing -> LT
+              _ /\ Just _ -> GT
