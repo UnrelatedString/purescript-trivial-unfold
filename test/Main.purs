@@ -149,6 +149,10 @@ smallSuite = describe "small stuff" do
     quickCheck \(x :: Trivial Char) n -> drop n x === index x (max n 0)
   it "take1 agrees with index1" do
     quickCheck \(x :: Trivial1 Char) n -> refoldMap1 Last (take1 n x) === (Last $ index1 x (clamp 0 (length x - 1) (n - 1)))
+  it "Ord1 Trivial1 agrees with Ord1 Array" do
+    quickCheck \(x :: Trivial1 Number) y -> compare x y === compare (runTrivial1 x :: Array _) (runTrivial1 y)
+  it "Ord1 Trivial agrees with Ord1 Array" do
+    quickCheck \(x :: Trivial Number) y -> compare x y === compare (arrgh x) (arrgh y)
 
 buildSuite :: Spec Unit
 buildSuite = describe "build" do
