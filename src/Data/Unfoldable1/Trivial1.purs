@@ -10,6 +10,7 @@ module Data.Unfoldable1.Trivial1
   , foldEnum
   , unfoldrInf
   , iterate
+  , repeat
   , head1
   , last1
   , take1
@@ -31,6 +32,7 @@ import Data.Unfoldable1.Trivial1.Internal
   ( Trivial1
   , (::<+>)
   , untrivial1
+  , runTrivial1
   , Generator1
   )
 import Data.Unfoldable.Trivial.Internal
@@ -133,6 +135,10 @@ unfoldrInf = unfoldr1 <<< (map Just <<< _)
 -- | types with truncating `Unfoldable1` instances (like `Maybe`).
 iterate :: forall a u. Unfoldable1 u => (a -> a) -> a -> u a
 iterate f seed = unfoldr1 (map \a -> Just (f a /\ f a)) $ seed /\ seed
+
+-- | Create an infinite `Unfoldable1` by repeating a single element.
+repeat :: forall a u. Unfoldable1 u => a -> u a
+repeat = runTrivial1 <<< pure
 
 -- | Concatenate an `Unfoldable1` with a possibly-empty `Unfoldable`.
 -- |

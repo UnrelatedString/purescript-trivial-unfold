@@ -41,6 +41,7 @@ import Data.Unfoldable1.Trivial1
   , foldEnum
   , unfoldrInf
   , iterate
+  , repeat
   , head1
   , last1
   , take1

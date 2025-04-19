@@ -20,7 +20,7 @@ module Data.Unfoldable.Trivial.Internal
 import Prelude
 
 import Data.Eq (class Eq1, eq1)
-import Data.Ord (class Ord1, ord1)
+import Data.Ord (class Ord1, compare1)
 import Data.Foldable (class Foldable, foldrDefault, foldMapDefaultL)
 import Data.Unfoldable
   (class Unfoldable

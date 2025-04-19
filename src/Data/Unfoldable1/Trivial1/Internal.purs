@@ -20,7 +20,7 @@ module Data.Unfoldable1.Trivial1.Internal
 import Prelude
 
 import Data.Eq (class Eq1, eq1)
-import Data.Ord (class Ord1, ord1)
+import Data.Ord (class Ord1, compare1)
 import Data.Foldable (class Foldable, foldrDefault, foldMapDefaultL, foldl)
 import Data.Semigroup.Foldable (class Foldable1, foldr1Default, foldMap1DefaultL)
 import Data.Unfoldable1 (class Unfoldable1, unfoldr1)
@@ -189,3 +189,15 @@ instance trivial1Semigroup :: Semigroup (Trivial1 a) where
 instance trivial1Eq :: Eq a => Eq (Trivial1 a) where
   eq = eq1
 
+-- instance trivial1Ord :: Ord a => Ord (Trivial1 a) where
+--   compare = compare1
+
+instance trivial1Eq1 :: Eq1 Trivial1 where
+  eq1 :: forall a. Eq a => Trivial1 a -> Trivial1 a -> Boolean
+  eq1 t1 = untrivial1 (untrivial1 eEq1 t1)
+    where eEq1 :: forall b b'. Generator1 a b -> b -> Generator1 a b' -> b' -> Boolean
+          eEq1 f b f' b' =
+            case f b /\ f' b' of
+              (a /\ Nothing) /\ a' /\ Nothing -> a == a'
+              (a /\ Just nb) /\ a' /\ Just nb' -> a == a' && eEq1 f nb f' nb'
+              _ -> false
