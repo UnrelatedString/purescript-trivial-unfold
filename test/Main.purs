@@ -5,7 +5,7 @@ import Prelude
 import Effect (Effect)
 import Test.Spec (Spec, describe, it)
 import Test.Spec.Assertions (shouldEqual, shouldSatisfy, AnyShow(..))
-import Test.QuickCheck ((===))
+import Test.QuickCheck ((===), (<?>))
 import Test.QuickCheck.Arbitrary (class Arbitrary)
 import Test.Spec.QuickCheck (quickCheck, quickCheck')
 import Test.Spec.Runner.Node (runSpecAndExitProcess)
@@ -156,10 +156,18 @@ smallSuite = describe "small stuff" do
     quickCheck \(x :: Trivial1 Int) -> x === x
   it "Eq1 Trivial is reflexive" do
     quickCheck \(x :: Trivial Int) -> x === x
+  it "Eq1 Trivial1 agrees with Eq1 Array" do
+    quickCheck \(x :: Trivial1 Boolean) y -> (x == y) === (arrgh1 x == arrgh1 y)
+  it "Eq1 Trivial agrees with Eq1 Array" do
+    quickCheck \(x :: Trivial Boolean) y -> (x == y) === (arrgh x == arrgh y)
+  it "Ord1 Trivial1 compares equal values as EQ" do
+    quickCheck \(x :: Trivial1 Number) -> compare x x === EQ
+  it "Ord1 Trivial compares equal values as EQ" do
+    quickCheck \(x :: Trivial Number) -> compare x x === EQ
   it "Ord1 Trivial1 agrees with Ord1 Array" do
-    quickCheck \(x :: Trivial1 Number) y -> compare x y === compare (runTrivial1 x :: Array _) (runTrivial1 y)
+    quickCheck \(x :: Trivial1 Number) y -> compare x y == compare (arrgh1 x) (arrgh1 y) <?> show (arrgh1 x) <> "\n\tcompared wrong with\n" <> show (arrgh1 y)
   it "Ord1 Trivial agrees with Ord1 Array" do
-    quickCheck \(x :: Trivial Number) y -> compare x y === compare (arrgh x) (arrgh y)
+    quickCheck \(x :: Trivial Number) y -> compare x y == compare (arrgh x) (arrgh y) <?> show (arrgh x) <> "\n\tcompared wrong with\n" <> show (arrgh y)
 
 buildSuite :: Spec Unit
 buildSuite = describe "build" do
@@ -214,7 +222,7 @@ applySuite = describe "Apply and Applicative" do
   it "Apply Trivial agrees with zipWith on arrays" do
     quickCheck \(f :: String -> Char -> Int) a b -> arrgh (f <$> a <*> b) === zipWith f (arrgh a) (arrgh b)
   it "Apply Trivial1 agrees with zipWith on arrays" do
-    quickCheck \(f :: String -> Char -> Int) a b -> runTrivial1 (f <$> a <*> b) === zipWith f (runTrivial1 a) (runTrivial1 b)
+    quickCheck \(f :: String -> Char -> Int) a b -> arrgh1 (f <$> a <*> b) === zipWith f (arrgh1 a) (arrgh1 b)
 
 genericApplicativeLaws :: forall t. Eq1 t => Applicative t => String -> Proxy t -> Spec Unit
 genericApplicativeLaws name _ = describe ("Applicative " <> name <> " identities") do
