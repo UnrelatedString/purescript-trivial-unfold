@@ -222,8 +222,8 @@ applySuite = describe "Apply and Applicative" do
     quickCheck \(f :: String -> Char -> Int) a b -> arrgh (f <$> a <*> b) === zipWith f (arrgh a) (arrgh b)
   it "Apply Trivial1 agrees with zipWith on arrays" do
     quickCheck \(f :: String -> Char -> Int) a b -> arrgh1 (f <$> a <*> b) === zipWith f (arrgh1 a) (arrgh1 b)
-  genericApplicativeLaws "Trivial" (Proxy :: Proxy (Trivial Int))
-  genericApplicativeLaws "Trivial1" (Proxy :: Proxy (Trivial1 Int))
+  genericApplicativeLaws "Trivial" 15 (take 25 :: _ -> _ Int)
+  genericApplicativeLaws "Trivial1" 15 (take1 25 :: _ -> _ Int)
 
 
 genericApplicativeLaws :: forall t a.
@@ -234,10 +234,18 @@ genericApplicativeLaws :: forall t a.
   Coarbitrary a => 
   Arbitrary (t a) =>
   Arbitrary (t (a -> a)) =>
-  String -> Proxy (t a) -> Spec Unit
-genericApplicativeLaws name _ = describe ("Applicative " <> name <> " identities") do
+  String -> Int -> (t a -> t a) -> Spec Unit
+genericApplicativeLaws name runs witness = describe ("Applicative " <> name <> " identities") do
   it "Associative composition: (<<<) <$> f <*> g <*> h ≡ f <*> (g <*> h)" do
-    quickCheck \(f :: t (a -> a)) g (h :: t a) -> (<<<) <$> f <*> g <*> h === f <*> (g <*> h)
+    quickCheck' runs \(f :: t (a -> a)) g (h :: t a) -> (<<<) <$> f <*> g <*> h === f <*> (g <*> h)
+  it "Identity: (pure identity) <*> v ≡ v" do
+    quickCheck' runs \(v :: t a) -> (pure identity) <*> v === v
+  it "Composition: pure (<<<) <*> f <*> g <*> h ≡ f <*> (g <*> h)" do
+    quickCheck' runs \(f :: t (a -> a)) g (h :: t a) -> pure (<<<) <*> f <*> g <*> h === f <*> (g <*> h)
+  it ("Homomorphism: (pure f) <*> (pure x) ≡ pure (f x) -- checked up to a limit because pure :: " <> name <> " a is infinite") do
+    quickCheck' runs \(f :: a -> a) x -> witness ((pure f) <*> (pure x)) === witness (pure (f x))
+  it "Interchange: u <*> (pure y) ≡ (pure (_ $ y)) <*> u" do
+    quickCheck' runs \(u :: t (a -> a)) y -> u <*> (pure y) === (pure (_ $ y)) <*> u
 
 enumSuite :: Spec Unit
 enumSuite = describe "enums" do
