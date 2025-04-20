@@ -291,6 +291,7 @@ applySuite = describe "Apply and Applicative" do
   genericApplicativeLaws "MaybeEmpty Identity" qc (identity :: _ -> MaybeEmpty Identity Int)
   genericApplicativeLaws "MaybeEmpty NonEmptyList" qc (identity :: _ -> MaybeEmpty NEL.NonEmptyList Int)
   genericApplicativeLaws "MaybeEmpty Array" qc (identity :: _ -> MaybeEmpty Array Int)
+  genericApplicativeLaws "NonEmptyList" qc (identity :: _ -> NEL.NonEmptyList Int)
 
 genericApplicativeLaws :: forall t a.
   Eq (t a) =>
