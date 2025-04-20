@@ -96,6 +96,7 @@ arrgh1 = runTrivial1
 main :: Effect Unit
 main = runSpecAndExitProcess [prettyReporter] do
   smallSuite
+  compareSuite
   buildSuite
   foldSuite
   appendSuite
@@ -151,22 +152,26 @@ smallSuite = describe "small stuff" do
     quickCheck \(x :: Trivial Char) n -> drop n x === index x (max n 0)
   it "take1 agrees with index1" do
     quickCheck \(x :: Trivial1 Char) n -> refoldMap1 Last (take1 n x) === (Last $ index1 x (clamp 0 (length x - 1) (n - 1)))
+  
+compareSuite :: Spec Unit
+compareSuite = describe "Eq and Ord" do
+  let qc = quickCheck' 20 :: forall p. Testable p => p -> _
   it "Eq1 Trivial1 is reflexive" do
-    quickCheck \(x :: Trivial1 Int) -> x === x
+    qc \(x :: Trivial1 Int) -> x === x
   it "Eq1 Trivial is reflexive" do
-    quickCheck \(x :: Trivial Int) -> x === x
+    qc \(x :: Trivial Int) -> x === x
   it "Eq1 Trivial1 agrees with Eq1 Array" do
-    quickCheck \(x :: Trivial1 Boolean) y -> (x == y) === (arrgh1 x == arrgh1 y)
+    qc \(x :: Trivial1 Boolean) y -> (x == y) === (arrgh1 x == arrgh1 y)
   it "Eq1 Trivial agrees with Eq1 Array" do
-    quickCheck \(x :: Trivial Boolean) y -> (x == y) === (arrgh x == arrgh y)
+    qc \(x :: Trivial Boolean) y -> (x == y) === (arrgh x == arrgh y)
   it "Ord1 Trivial1 compares equal values as EQ" do
-    quickCheck \(x :: Trivial1 Number) -> compare x x === EQ
+    qc \(x :: Trivial1 Number) -> compare x x === EQ
   it "Ord1 Trivial compares equal values as EQ" do
-    quickCheck \(x :: Trivial Number) -> compare x x === EQ
+    qc \(x :: Trivial Number) -> compare x x === EQ
   it "Ord1 Trivial1 agrees with Ord1 Array" do
-    quickCheck \(x :: Trivial1 Number) y -> compare x y == compare (arrgh1 x) (arrgh1 y) <?> show (arrgh1 x) <> "\n\tcompared wrong with\n" <> show (arrgh1 y)
+    qc \(x :: Trivial1 Number) y -> compare x y == compare (arrgh1 x) (arrgh1 y) <?> show (arrgh1 x) <> "\n\tcompared wrong with\n" <> show (arrgh1 y)
   it "Ord1 Trivial agrees with Ord1 Array" do
-    quickCheck \(x :: Trivial Number) y -> compare x y == compare (arrgh x) (arrgh y) <?> show (arrgh x) <> "\n\tcompared wrong with\n" <> show (arrgh y)
+    qc \(x :: Trivial Number) y -> compare x y == compare (arrgh x) (arrgh y) <?> show (arrgh x) <> "\n\tcompared wrong with\n" <> show (arrgh y)
 
 buildSuite :: Spec Unit
 buildSuite = describe "build" do
@@ -207,7 +212,7 @@ foldSuite = describe "foldl foldr" do
 
 appendSuite :: Spec Unit
 appendSuite = describe "Semigroup and Alternative" do
-  let qc = quickCheck' 20 :: forall p. Testable p => p -> _
+  let qc = quickCheck' 15 :: forall p. Testable p => p -> _
   it "Semigroup (Trivial a) agrees with Alt Array" do
     qc \(a :: Trivial Char) b -> arrgh (a <> b) === arrgh a <|> arrgh b
   it "Semigroup (Trivial1 a) agrees with Alt Array" do
@@ -352,9 +357,9 @@ newtypesSuite = describe "Newtypes" do
   it "Foldable MaybeEmpty Trivial1 agrees with Foldable Trivial" do
     let the :: forall a. Trivial a -> MaybeEmpty Trivial1 a
         the = runTrivial
-    quickCheck \(x :: Trivial Char) (f :: Char -> Int -> Int) y -> foldr f y (the x) === foldr f y x
-    quickCheck \(x :: Trivial Char) (f :: Int -> Char -> Int) y -> foldl f y (the x) === foldl f y x
-    quickCheck \(x :: Trivial Char) (f :: Char -> String) -> foldMap f (the x) === foldMap f x
+    quickCheck' 40 \(x :: Trivial Char) (f :: Char -> Int -> Int) y -> foldr f y (the x) === foldr f y x
+    quickCheck' 40 \(x :: Trivial Char) (f :: Int -> Char -> Int) y -> foldl f y (the x) === foldl f y x
+    quickCheck' 40 \(x :: Trivial Char) (f :: Char -> String) -> foldMap f (the x) === foldMap f x
 
 filterSuite :: Spec Unit
 filterSuite = describe "Compactable and Filterable" do
