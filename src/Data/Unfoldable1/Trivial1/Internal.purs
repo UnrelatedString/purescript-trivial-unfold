@@ -194,11 +194,12 @@ instance trivial1Alt :: Alt Trivial1 where
                   smooshed =
                       bimap f f'
                     >>>
-                      (bimap fst fst &&& bimap snd snd) -- unzip where 
+                      (bimap fst fst &&& bimap snd snd)
                     >>>
                       (
                         these identity identity const
                       ***
+                        -- this SO feels like it should be a library feature
                         \x -> maybeThese (join $ theseLeft x) (join $ theseRight x)
                       )
 
