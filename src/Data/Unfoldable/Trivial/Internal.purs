@@ -42,7 +42,7 @@ import Data.Filterable
   , filterMapDefault
   )
 import Data.Either (Either(..), either)
-import Control.Alternative (class Alt, class Plus, class Alternative, (<|>))
+import Control.Alternative (class Alt, class Plus, (<|>))
 import Control.Lazy (class Lazy)
 import Test.QuickCheck.Arbitrary (class Arbitrary, class Coarbitrary, arbitrary)
 import Test.QuickCheck.Gen (sized)
@@ -210,11 +210,13 @@ instance trivialSemigroup :: Semigroup (Trivial a) where
 instance trivialMonoid :: Monoid (Trivial a) where
   mempty = none
 
--- | Zipwith; chosen over the `Monad`-compatible nondet choice used for `Array` etc.
+-- | Zipwith; chosen over the `Monad`- and `Alternative`-compatible
+-- | nondet choice used for `Array` etc.
 -- | because that would require effectively forcing one argument and either
 -- | re-evaluating it constantly or storing its elements in a real container
 -- | at which point please please please just do that without using `Trivial`.
 -- | Length is the minimum of the arguments' lengths.
+-- | (The violated `Alternative` law is distributivity.)
 instance trivialApply :: Apply Trivial where
   apply :: forall a c. Trivial (a -> c) -> Trivial a -> Trivial c
   apply tg = untrivial (untrivial eApply tg)
@@ -230,8 +232,6 @@ instance trivialApply :: Apply Trivial where
 -- | If you just want one element, use `singleton` instead.
 instance trivialApplicative :: Applicative Trivial where
   pure a = unfoldr (const $ Just $ a /\ unit) unit
-
-instance trivialAlternative :: Alternative Trivial
 
 -- | Does not and cannot memoize the values being produced to compare.
 -- | Please consider using Data.List.Lazy or your strict container of choice

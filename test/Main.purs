@@ -61,7 +61,7 @@ import Data.Unfoldable.MaybeEmpty
   )
 
 import Data.Maybe (Maybe(..), isJust, isNothing)
-import Control.Alternative ((<|>), guard, empty, class Alternative, class Alt)
+import Control.Alternative ((<|>), guard, empty, class Alternative, class Plus, class Alt)
 import Data.Enum (class Enum, class BoundedEnum, succ, pred, upFrom, downFrom, upFromIncluding, enumFromTo)
 import Data.Tuple (snd)
 import Data.Tuple.Nested ((/\), type (/\))
@@ -216,7 +216,7 @@ appendSuite = describe "Semigroup and Alternative" do
     qc \(a :: Trivial1 Char) (b :: Trivial Char) -> arrgh1 (a `append1` b) === arrgh1 a <|> arrgh b
   it "append1' agrees with Alt Array" do
     qc \(a :: Trivial Char) (b :: Trivial1 Char) -> arrgh1 (a `append1'` b) === arrgh a <|> arrgh1 b
-  genericAlternativeLaws "Trivial" qc (Proxy :: Proxy (Trivial Int))
+  genericPlusLaws "Trivial" qc (Proxy :: Proxy (Trivial Int))
   genericAltLaws "Trivial1" qc (Proxy :: Proxy (Trivial1 Int))
   genericAlternativeLaws "MaybeEmpty NonEmptyList" qc (Proxy :: Proxy (MaybeEmpty NEL.NonEmptyList Int))
 
@@ -234,6 +234,25 @@ genericAltLaws name qc _ = describe ("Alt " <> name <> " laws") do
   it "Distributivity: f <$> (x <|> y) ≡ (f <$> x) <|> (f <$> y)" do
     qc \(f :: a -> a) (x :: t a) y -> f <$> (x <|> y) === (f <$> x) <|> (f <$> y)
 
+genericPlusLaws :: forall t a.
+  Eq (t a) =>
+  Show (t a) =>
+  Plus t =>
+  Arbitrary a =>
+  Coarbitrary a => 
+  Arbitrary (t a) =>
+  Arbitrary (t (a -> a)) =>
+  String -> (forall p. Testable p => p -> Aff Unit) -> Proxy (t a) -> Spec Unit
+genericPlusLaws name qc proxy = do
+  genericAltLaws name qc proxy
+  describe ("Plus " <> name <> " laws") do
+    it "Left identity: empty <|> x ≡ x" do
+      qc \(x :: t a) -> empty <|> x === x
+    it "Right identity: x <|> empty ≡ x" do
+      qc \(x :: t a) -> x <|> empty === x
+    it "Annihilation: f <$> empty ≡ empty" do
+      qc \(f :: a -> a) -> f <$> empty === (empty :: t a)
+
 genericAlternativeLaws :: forall t a.
   Eq (t a) =>
   Show (t a) =>
@@ -245,13 +264,7 @@ genericAlternativeLaws :: forall t a.
   String -> (forall p. Testable p => p -> Aff Unit) -> Proxy (t a) -> Spec Unit
 genericAlternativeLaws name qc proxy = do
   genericAltLaws name qc proxy
-  describe ("Plus " <> name <> " laws") do
-    it "Left identity: empty <|> x ≡ x" do
-      qc \(x :: t a) -> empty <|> x === x
-    it "Right identity: x <|> empty ≡ x" do
-      qc \(x :: t a) -> x <|> empty === x
-    it "Annihilation: f <$> empty ≡ empty" do
-      qc \(f :: a -> a) -> f <$> empty === (empty :: t a)
+  genericPlusLaws name qc proxy
   describe ("Alternative " <> name <> " laws") do
     it "Distributivity: (f <|> g) <*> x ≡ (f <*> x) <|> (g <*> x)" do
       qc \(f :: t (a -> a)) g x -> (f <|> g) <*> x === (f <*> x) <|> (g <*> x)
