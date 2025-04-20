@@ -263,8 +263,8 @@ instance trivialOrd1 :: Ord1 Trivial where
               Just (a /\ nb) /\ Just (a' /\ nb')
                 | a == a' -> eCompare1 f nb f' nb'
                 | otherwise -> a `compare` a'
-              _ /\ Nothing -> LT
-              _ /\ Just _ -> GT
+              _ /\ Nothing -> GT
+              _ /\ Just _ -> LT
 
 instance trivialShow :: Show a => Show (Trivial a) where
   show t = "toUnfoldable [" <> intercalate ", " (show <$> t) <> "]"
