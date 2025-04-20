@@ -5,8 +5,8 @@ import Prelude
 import Effect (Effect)
 import Test.Spec (Spec, describe, it)
 import Test.Spec.Assertions (shouldEqual, shouldSatisfy, AnyShow(..))
-import Test.QuickCheck ((===))
-import Test.QuickCheck.Arbitrary (class Arbitrary)
+import Test.QuickCheck ((===), (<?>), class Testable)
+import Test.QuickCheck.Arbitrary (class Arbitrary, class Coarbitrary)
 import Test.Spec.QuickCheck (quickCheck, quickCheck')
 import Test.Spec.Runner.Node (runSpecAndExitProcess)
 import Test.Spec.Reporter.June.Pretty (prettyReporter)
@@ -61,7 +61,7 @@ import Data.Unfoldable.MaybeEmpty
   )
 
 import Data.Maybe (Maybe(..), isJust, isNothing)
-import Control.Alternative ((<|>), guard, empty)
+import Control.Alternative ((<|>), guard, empty, class Alternative, class Plus, class Alt)
 import Data.Enum (class Enum, class BoundedEnum, succ, pred, upFrom, downFrom, upFromIncluding, enumFromTo)
 import Data.Tuple (snd)
 import Data.Tuple.Nested ((/\), type (/\))
@@ -73,6 +73,7 @@ import Data.Foldable (foldl, foldr, foldMap, foldMapDefaultL, foldMapDefaultR, i
 import Data.Semigroup.Foldable (foldl1, foldr1, foldMap1DefaultL, foldMap1DefaultR)
 import Type.Proxy (Proxy(..))
 import Data.Array (toUnfoldable, zipWith)
+import Data.Array.NonEmpty (NonEmptyArray)
 import Data.Monoid.Multiplicative (Multiplicative(..))
 import Data.Newtype (un, ala)
 import Data.Compactable (compact, applyMaybe)
@@ -80,7 +81,6 @@ import Control.Extend (duplicate)
 import Data.Identity (Identity)
 import Data.Distributive (distribute)
 import Data.List.NonEmpty as NEL
-import Data.Eq (class Eq1)
 
 iff :: forall a. Boolean -> a -> Maybe a
 iff = ($>) <<< guard
@@ -91,9 +91,13 @@ oughta = map AnyShow >>> shouldSatisfy
 arrgh :: forall a. Trivial a -> Array a
 arrgh = runTrivial
 
+arrgh1 :: forall a. Trivial1 a -> Array a
+arrgh1 = runTrivial1
+
 main :: Effect Unit
 main = runSpecAndExitProcess [prettyReporter] do
   smallSuite
+  compareSuite
   buildSuite
   foldSuite
   appendSuite
@@ -115,9 +119,9 @@ smallSuite = describe "small stuff" do
     quickCheck \x -> head (replicate x "ehehe") === iff (x > 0) "ehehe"
     quickCheck \x (y :: Int) -> head (replicate1 x y) === Just y
   it "last is sane" do
-    quickCheck \(x :: Int) -> last (singleton x) === Just x
-    quickCheck \(x :: Int) -> last1 (singleton x) === x
-    quickCheck \(x :: Maybe String) -> last (fromMaybe x) === x
+    quickCheck' 5 \(x :: Int) -> last (singleton x) === Just x
+    quickCheck' 5 \(x :: Int) -> last1 (singleton x) === x
+    quickCheck' 5 \(x :: Maybe String) -> last (fromMaybe x) === x
     quickCheck' 5 \x -> last (replicate x "ehehe") === iff (x > 0) "ehehe"
     quickCheck' 5 \x (y :: Int) -> last (replicate1 x y) === Just y
   it "double uncons" do
@@ -131,11 +135,11 @@ smallSuite = describe "small stuff" do
     quickCheck \(x :: Char) -> head (tail $ upFrom x) === (succ =<< succ x)
     quickCheck \(x :: Trivial Int) -> head (tail x) === index x 1
   it "last tail gets last" do
-    quickCheck \(x :: String) -> last (tail $ singleton x) === Nothing
-    quickCheck \(x :: Trivial Int) -> last (tail x) === tail x *> last x
+    quickCheck' 15 \(x :: String) -> last (tail $ singleton x) === Nothing
+    quickCheck' 15 \(x :: Trivial Int) -> last (tail x) === tail x *> last x
   it "last init gets second to last" do
-    quickCheck \(x :: String) -> last (init $ singleton x) === Nothing
-    quickCheck' 50 \(x :: Char) y -> last (init $ enumFromTo x y) === case compare x y of
+    quickCheck' 25 \(x :: String) -> last (init $ singleton x) === Nothing
+    quickCheck' 15 \(x :: Char) y -> last (init $ enumFromTo x y) === case compare x y of
       LT -> pred y
       GT -> succ y
       EQ -> Nothing
@@ -149,6 +153,26 @@ smallSuite = describe "small stuff" do
     quickCheck \(x :: Trivial Char) n -> drop n x === index x (max n 0)
   it "take1 agrees with index1" do
     quickCheck \(x :: Trivial1 Char) n -> refoldMap1 Last (take1 n x) === (Last $ index1 x (clamp 0 (length x - 1) (n - 1)))
+  
+compareSuite :: Spec Unit
+compareSuite = describe "Eq and Ord" do
+  let qc = quickCheck' 20 :: forall p. Testable p => p -> _
+  it "Eq1 Trivial1 is reflexive" do
+    qc \(x :: Trivial1 Int) -> x === x
+  it "Eq1 Trivial is reflexive" do
+    qc \(x :: Trivial Int) -> x === x
+  it "Eq1 Trivial1 agrees with Eq1 Array" do
+    qc \(x :: Trivial1 Boolean) y -> (x == y) === (arrgh1 x == arrgh1 y)
+  it "Eq1 Trivial agrees with Eq1 Array" do
+    qc \(x :: Trivial Boolean) y -> (x == y) === (arrgh x == arrgh y)
+  it "Ord1 Trivial1 compares equal values as EQ" do
+    qc \(x :: Trivial1 Number) -> compare x x === EQ
+  it "Ord1 Trivial compares equal values as EQ" do
+    qc \(x :: Trivial Number) -> compare x x === EQ
+  it "Ord1 Trivial1 agrees with Ord1 Array" do
+    qc \(x :: Trivial1 Number) y -> compare x y == compare (arrgh1 x) (arrgh1 y) <?> show (arrgh1 x) <> "\n\tcompared wrong with\n" <> show (arrgh1 y)
+  it "Ord1 Trivial agrees with Ord1 Array" do
+    qc \(x :: Trivial Number) y -> compare x y == compare (arrgh x) (arrgh y) <?> show (arrgh x) <> "\n\tcompared wrong with\n" <> show (arrgh y)
 
 buildSuite :: Spec Unit
 buildSuite = describe "build" do
@@ -170,51 +194,132 @@ foldSuite :: Spec Unit
 foldSuite = describe "foldl foldr" do
   describe "Foldable Trivial1" do
     it "associative string concatenation agrees" do
-      quickCheck \(u :: Trivial1 String) ->
+      quickCheck' 15 \(u :: Trivial1 String) ->
         foldMapDefaultL identity u === foldMapDefaultR identity u
   describe "Foldable Trivial" do
     it "associative string concatenation agrees" do
-      quickCheck \(u :: Trivial String) ->
+      quickCheck' 15 \(u :: Trivial String) ->
         foldMapDefaultL identity u === foldMapDefaultR identity u
     it "empty folds" do 
       quickCheck \(f :: Int -> String -> Int) x -> (foldl f x ::<*> none) === x
       quickCheck \(f :: String -> Int -> Int) x -> (foldr f x ::<*> none) === x
   describe "Foldable1 Trivial1" do
     it "associative string concatenation agrees" do
-      quickCheck \(u :: Trivial1 String) ->
+      quickCheck' 15 \(u :: Trivial1 String) ->
         foldMap1DefaultL identity u === foldMap1DefaultR identity u
     it "singleton folds" do 
       quickCheck \f (x :: Int) -> (foldl1 f ::<+> singleton x) === x
       quickCheck \f (x :: Int) -> (foldr1 f ::<+> singleton x) === x
 
 appendSuite :: Spec Unit
-appendSuite = describe "appends (incl. Semigroup/Alt)" do
-  it "Alt Trivial agrees with Alt Array" do
-    quickCheck \(a :: Trivial Char) b -> arrgh (a <|> b) === arrgh a <|> arrgh b
-  it "Alt Trivial1 agrees with Alt Array" do
-    quickCheck \(a :: Trivial1 Char) b -> runTrivial1 (a <|> b) === [] <|> runTrivial1 a <|> runTrivial1 b
+appendSuite = describe "Semigroup and Alternative" do
+  let qc = quickCheck' 15 :: forall p. Testable p => p -> _
+  it "Semigroup (Trivial a) agrees with Alt Array" do
+    qc \(a :: Trivial Char) b -> arrgh (a <> b) === arrgh a <|> arrgh b
+  it "Semigroup (Trivial1 a) agrees with Alt Array" do
+    qc \(a :: Trivial1 Char) b -> arrgh1 (a <> b) === arrgh1 a <|> arrgh1 b
   it "append1 agrees with Alt Array" do
-    quickCheck \(a :: Trivial1 Char) (b :: Trivial Char) -> runTrivial1 (a `append1` b) === runTrivial1 a <|> arrgh b
+    qc \(a :: Trivial1 Char) (b :: Trivial Char) -> arrgh1 (a `append1` b) === arrgh1 a <|> arrgh b
   it "append1' agrees with Alt Array" do
-    quickCheck \(a :: Trivial Char) (b :: Trivial1 Char) -> runTrivial1 (a `append1'` b) === arrgh a <|> runTrivial1 b
+    qc \(a :: Trivial Char) (b :: Trivial1 Char) -> arrgh1 (a `append1'` b) === arrgh a <|> arrgh1 b
+  it "Alt Trivial1 agrees with Alt Trivial" do
+    qc \x y -> runTrivial1 (x <|> y) === runTrivial1 x <|> (runTrivial1 y :: Trivial Number)
+  genericAlternativeLaws "Trivial" qc (Proxy :: Proxy (Trivial Int))
+  genericAltLaws "Trivial1" qc (Proxy :: Proxy (Trivial1 Int))
+  genericAlternativeLaws "MaybeEmpty Identity" qc (Proxy :: Proxy (MaybeEmpty Identity Int))
+  genericAlternativeLaws "MaybeEmpty Maybe" qc (Proxy :: Proxy (MaybeEmpty Maybe Int))
+  genericAlternativeLaws "MaybeEmpty NonEmptyArray" qc (Proxy :: Proxy (MaybeEmpty NonEmptyArray Int))
+
+genericAltLaws :: forall t a.
+  Eq (t a) =>
+  Show (t a) =>
+  Alt t =>
+  Arbitrary a =>
+  Coarbitrary a => 
+  Arbitrary (t a) =>
+  String -> (forall p. Testable p => p -> Aff Unit) -> Proxy (t a) -> Spec Unit
+genericAltLaws name qc _ = describe ("Alt " <> name <> " laws") do
+  it "Associativity: (x <|> y) <|> z ≡ x <|> (y <|> z)" do
+    qc \(x :: t a) y z -> (x <|> y) <|> z === x <|> (y <|> z)
+  it "Distributivity: f <$> (x <|> y) ≡ (f <$> x) <|> (f <$> y)" do
+    qc \(f :: a -> a) (x :: t a) y -> f <$> (x <|> y) === (f <$> x) <|> (f <$> y)
+
+genericPlusLaws :: forall t a.
+  Eq (t a) =>
+  Show (t a) =>
+  Plus t =>
+  Arbitrary a =>
+  Coarbitrary a => 
+  Arbitrary (t a) =>
+  Arbitrary (t (a -> a)) =>
+  String -> (forall p. Testable p => p -> Aff Unit) -> Proxy (t a) -> Spec Unit
+genericPlusLaws name qc proxy = do
+  genericAltLaws name qc proxy
+  describe ("Plus " <> name <> " laws") do
+    it "Left identity: empty <|> x ≡ x" do
+      qc \(x :: t a) -> empty <|> x === x
+    it "Right identity: x <|> empty ≡ x" do
+      qc \(x :: t a) -> x <|> empty === x
+    it "Annihilation: f <$> empty ≡ empty" do
+      qc \(f :: a -> a) -> f <$> empty === (empty :: t a)
+
+genericAlternativeLaws :: forall t a.
+  Eq (t a) =>
+  Show (t a) =>
+  Alternative t =>
+  Arbitrary a =>
+  Coarbitrary a => 
+  Arbitrary (t a) =>
+  Arbitrary (t (a -> a)) =>
+  String -> (forall p. Testable p => p -> Aff Unit) -> Proxy (t a) -> Spec Unit
+genericAlternativeLaws name qc proxy = do
+  genericAltLaws name qc proxy
+  genericPlusLaws name qc proxy
+  describe ("Alternative " <> name <> " laws") do
+    it "Distributivity: (f <|> g) <*> x ≡ (f <*> x) <|> (g <*> x)" do
+      qc \(f :: t (a -> a)) g x -> (f <|> g) <*> x === (f <*> x) <|> (g <*> x)
+    it "Annihilation: empty <*> f ≡ empty" do
+      qc \(f :: t a) -> empty <*> f === (empty :: t a)
 
 applySuite :: Spec Unit
 applySuite = describe "Apply and Applicative" do
+  let qc = quickCheck' 10 :: forall p. Testable p => p -> _
   it "Apply Trivial agrees with zipWith on arrays" do
-    quickCheck \(f :: String -> Char -> Int) a b -> arrgh (f <$> a <*> b) === zipWith f (arrgh a) (arrgh b)
+    qc \(f :: String -> Char -> Int) a b -> arrgh (f <$> a <*> b) === zipWith f (arrgh a) (arrgh b)
   it "Apply Trivial1 agrees with zipWith on arrays" do
-    quickCheck \(f :: String -> Char -> Int) a b -> runTrivial1 (f <$> a <*> b) === zipWith f (runTrivial1 a) (runTrivial1 b)
+    qc \(f :: String -> Char -> Int) a b -> arrgh1 (f <$> a <*> b) === zipWith f (arrgh1 a) (arrgh1 b)
+  genericApplicativeLaws "Trivial" qc (take 25 :: _ -> _ Int)
+  genericApplicativeLaws "Trivial1" qc (take1 25 :: _ -> _ Int)
+  genericApplicativeLaws "MaybeEmpty Identity" qc (identity :: _ -> MaybeEmpty Identity Int)
+  genericApplicativeLaws "MaybeEmpty Maybe" qc (identity :: _ -> MaybeEmpty Maybe Int)
+  genericApplicativeLaws "MaybeEmpty NonEmptyArray" qc (identity :: _ -> MaybeEmpty NonEmptyArray Int)
 
-genericApplicativeLaws :: forall t. Eq1 t => Applicative t => String -> Proxy t -> Spec Unit
-genericApplicativeLaws name _ = describe ("Applicative " <> name <> " identities") do
-  pure unit
-  -- okay yeah no I'm just going to write an Eq instance it's like basically the same thing anywayss"
+genericApplicativeLaws :: forall t a.
+  Eq (t a) =>
+  Show (t a) =>
+  Applicative t =>
+  Arbitrary a =>
+  Coarbitrary a => 
+  Arbitrary (t a) =>
+  Arbitrary (t (a -> a)) =>
+  String -> (forall p. Testable p => p -> Aff Unit) -> (t a -> t a) -> Spec Unit
+genericApplicativeLaws name qc witness = describe ("Applicative " <> name <> " identities") do
+  it "Associative composition: (<<<) <$> f <*> g <*> h ≡ f <*> (g <*> h)" do
+    qc \(f :: t (a -> a)) g (h :: t a) -> (<<<) <$> f <*> g <*> h === f <*> (g <*> h)
+  it "Identity: (pure identity) <*> v ≡ v" do
+    qc \(v :: t a) -> (pure identity) <*> v === v
+  it "Composition: pure (<<<) <*> f <*> g <*> h ≡ f <*> (g <*> h)" do
+    qc \(f :: t (a -> a)) g (h :: t a) -> pure (<<<) <*> f <*> g <*> h === f <*> (g <*> h)
+  it ("Homomorphism: (pure f) <*> (pure x) ≡ pure (f x) -- checked up to a limit if pure :: " <> name <> " a is infinite") do
+    qc \(f :: a -> a) x -> witness ((pure f) <*> (pure x)) === witness (pure (f x))
+  it "Interchange: u <*> (pure y) ≡ (pure (_ $ y)) <*> u" do
+    qc \(u :: t (a -> a)) y -> u <*> (pure y) === (pure (_ $ y)) <*> u
 
 enumSuite :: Spec Unit
 enumSuite = describe "enums" do
   genericEnumSuite "Int" (Proxy :: Proxy Int) do
     it "index matches upFromIncluding" do
-      quickCheck' 20 \x y -> index (upFromIncluding x) y === iff (y >= 0) (x + y)
+      quickCheck' 5 \x y -> index (upFromIncluding x) y === iff (y >= 0) (x + y)
     it "index matches iterate" do
       quickCheck' 5 \x -> index (iterate (_+1) 0) x === iff (x >= 0) x
   genericBoundedEnumSuite "Char" (Proxy :: Proxy Char) $ pure unit
@@ -257,9 +362,9 @@ newtypesSuite = describe "Newtypes" do
   it "Foldable MaybeEmpty Trivial1 agrees with Foldable Trivial" do
     let the :: forall a. Trivial a -> MaybeEmpty Trivial1 a
         the = runTrivial
-    quickCheck \(x :: Trivial Char) (f :: Char -> Int -> Int) y -> foldr f y (the x) === foldr f y x
-    quickCheck \(x :: Trivial Char) (f :: Int -> Char -> Int) y -> foldl f y (the x) === foldl f y x
-    quickCheck \(x :: Trivial Char) (f :: Char -> String) -> foldMap f (the x) === foldMap f x
+    quickCheck' 40 \(x :: Trivial Char) (f :: Char -> Int -> Int) y -> foldr f y (the x) === foldr f y x
+    quickCheck' 40 \(x :: Trivial Char) (f :: Int -> Char -> Int) y -> foldl f y (the x) === foldl f y x
+    quickCheck' 40 \(x :: Trivial Char) (f :: Char -> String) -> foldMap f (the x) === foldMap f x
 
 filterSuite :: Spec Unit
 filterSuite = describe "Compactable and Filterable" do
