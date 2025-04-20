@@ -73,6 +73,7 @@ import Data.Foldable (foldl, foldr, foldMap, foldMapDefaultL, foldMapDefaultR, i
 import Data.Semigroup.Foldable (foldl1, foldr1, foldMap1DefaultL, foldMap1DefaultR)
 import Type.Proxy (Proxy(..))
 import Data.Array (toUnfoldable, zipWith)
+import Data.Array.NonEmpty (NonEmptyArray)
 import Data.Monoid.Multiplicative (Multiplicative(..))
 import Data.Newtype (un, ala)
 import Data.Compactable (compact, applyMaybe)
@@ -226,7 +227,8 @@ appendSuite = describe "Semigroup and Alternative" do
   genericAlternativeLaws "Trivial" qc (Proxy :: Proxy (Trivial Int))
   genericAltLaws "Trivial1" qc (Proxy :: Proxy (Trivial1 Int))
   genericAlternativeLaws "MaybeEmpty Identity" qc (Proxy :: Proxy (MaybeEmpty Identity Int))
-  genericAlternativeLaws "MaybeEmpty NonEmptyList" qc (Proxy :: Proxy (MaybeEmpty NEL.NonEmptyList Int))
+  genericAlternativeLaws "MaybeEmpty Maybe" qc (Proxy :: Proxy (MaybeEmpty Maybe Int))
+  genericAlternativeLaws "MaybeEmpty NonEmptyArray" qc (Proxy :: Proxy (MaybeEmpty NonEmptyArray Int))
 
 genericAltLaws :: forall t a.
   Eq (t a) =>
@@ -289,9 +291,8 @@ applySuite = describe "Apply and Applicative" do
   genericApplicativeLaws "Trivial" qc (take 25 :: _ -> _ Int)
   genericApplicativeLaws "Trivial1" qc (take1 25 :: _ -> _ Int)
   genericApplicativeLaws "MaybeEmpty Identity" qc (identity :: _ -> MaybeEmpty Identity Int)
-  genericApplicativeLaws "MaybeEmpty NonEmptyList" qc (identity :: _ -> MaybeEmpty NEL.NonEmptyList Int)
-  genericApplicativeLaws "MaybeEmpty Array" qc (identity :: _ -> MaybeEmpty Array Int)
-  genericApplicativeLaws "NonEmptyList" qc (identity :: _ -> NEL.NonEmptyList Int)
+  genericApplicativeLaws "MaybeEmpty Maybe" qc (identity :: _ -> MaybeEmpty Maybe Int)
+  genericApplicativeLaws "MaybeEmpty NonEmptyArray" qc (identity :: _ -> MaybeEmpty NonEmptyArray Int)
 
 genericApplicativeLaws :: forall t a.
   Eq (t a) =>
