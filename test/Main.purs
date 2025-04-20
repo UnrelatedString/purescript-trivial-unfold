@@ -281,6 +281,8 @@ applySuite = describe "Apply and Applicative" do
     qc \(f :: String -> Char -> Int) a b -> arrgh1 (f <$> a <*> b) === zipWith f (arrgh1 a) (arrgh1 b)
   genericApplicativeLaws "Trivial" qc (take 25 :: _ -> _ Int)
   genericApplicativeLaws "Trivial1" qc (take1 25 :: _ -> _ Int)
+  genericApplicativeLaws "MaybeEmpty Identity" qc (identity :: _ -> MaybeEmpty Identity Int)
+  genericApplicativeLaws "MaybeEmpty NonEmptyList" qc (identity :: _ -> MaybeEmpty NEL.NonEmptyList Int)
 
 genericApplicativeLaws :: forall t a.
   Eq (t a) =>
