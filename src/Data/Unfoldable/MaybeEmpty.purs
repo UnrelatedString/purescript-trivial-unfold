@@ -53,11 +53,11 @@ derive instance Ord1 f => Ord1 (MaybeEmpty f)
 instance maybeEmptyShow :: (Show (f a)) => Show (MaybeEmpty f a) where
   show (MaybeEmpty m) = "(MaybeEmpty " <> show m <> ")"
 
-instance (Eq1 f, Eq a) => Eq (MaybeEmpty f a) where
+instance maybeEmptyEq :: (Eq1 f, Eq a) => Eq (MaybeEmpty f a) where
   eq (MaybeEmpty Nothing) (MaybeEmpty Nothing) = true
   eq (MaybeEmpty x) (MaybeEmpty y) = (eq1 <$> x <*> y) == Just true
 
-instance (Ord1 f, Ord a) => Ord (MaybeEmpty f a) where
+instance maybeEmptyOrd :: (Ord1 f, Ord a) => Ord (MaybeEmpty f a) where
   compare = compare1
 
 instance maybeEmptyUnfoldable1 :: Unfoldable1 f => Unfoldable1 (MaybeEmpty f) where
