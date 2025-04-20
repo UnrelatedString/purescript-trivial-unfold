@@ -208,10 +208,10 @@ foldSuite = describe "foldl foldr" do
 appendSuite :: Spec Unit
 appendSuite = describe "Semigroup and Alternative" do
   let qc = quickCheck' 20 :: forall p. Testable p => p -> _
-  it "Alt Trivial agrees with Alt Array" do
-    qc \(a :: Trivial Char) b -> arrgh (a <|> b) === arrgh a <|> arrgh b
-  it "Alt Trivial1 agrees with Alt Array" do
-    qc \(a :: Trivial1 Char) b -> arrgh1 (a <|> b) === [] <|> arrgh1 a <|> arrgh1 b
+  it "Semigroup (Trivial a) agrees with Alt Array" do
+    qc \(a :: Trivial Char) b -> arrgh (a <> b) === arrgh a <|> arrgh b
+  it "Semigroup (Trivial1 a) agrees with Alt Array" do
+    qc \(a :: Trivial1 Char) b -> arrgh1 (a <> b) === arrgh1 a <|> arrgh1 b
   it "append1 agrees with Alt Array" do
     qc \(a :: Trivial1 Char) (b :: Trivial Char) -> arrgh1 (a `append1` b) === arrgh1 a <|> arrgh b
   it "append1' agrees with Alt Array" do

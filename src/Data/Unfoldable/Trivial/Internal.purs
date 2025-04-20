@@ -30,7 +30,7 @@ import Data.Unfoldable
   )
 import Data.Tuple (uncurry, fst, snd)
 import Data.Tuple.Nested ((/\), type (/\))
-import Data.Maybe (Maybe(..), maybe', fromMaybe)
+import Data.Maybe (Maybe(..), maybe')
 import Data.Exists (Exists, mkExists, runExists)
 import Data.Bifunctor (lmap)
 import Data.Functor.Invariant (class Invariant, imapF)
@@ -42,7 +42,7 @@ import Data.Filterable
   , filterMapDefault
   )
 import Data.Either (Either(..), either)
-import Control.Alternative (class Alt, class Plus, class Alternative)
+import Control.Alternative (class Alt, class Plus, class Alternative, (<|>))
 import Control.Lazy (class Lazy)
 import Test.QuickCheck.Arbitrary (class Arbitrary, class Coarbitrary, arbitrary)
 import Test.QuickCheck.Gen (sized)
@@ -211,13 +211,12 @@ instance trivialAlt :: Alt Trivial where
   alt :: forall a. Trivial a -> Trivial a -> Trivial a
   alt t = untrivial (untrivial eAlt t)
     where eAlt :: forall b b'. Generator a b -> b -> Generator a b' -> b' -> Trivial a
-          eAlt f seed f' seed' = unfoldr smooshed $ Just seed /\ seed'
-            where smooshed :: Maybe b /\ b' -> Maybe (a /\ Maybe b /\ b')
-                  smooshed (Just b /\ b') = do
-                    let dom = f b
-                    a' /\ nb' <- f' b'
-                    Just $ fromMaybe a' (fst <$> dom) /\ map snd dom /\ nb'
-                  smooshed (Nothing /\ b') = map (Nothing /\ _) <$> f' b'
+          eAlt f seed f' seed' = unfoldr smooshed $ Just seed /\ Just seed'
+            where smooshed :: Maybe b /\ Maybe b' -> Maybe (a /\ Maybe b /\ Maybe b')
+                  smooshed (b /\ b') = (map fst top <|> map fst me) <#> (_ /\ map snd top /\ map snd me)
+                    where top = f =<< b
+                          me = f' =<< b'
+
                     
 
 instance trivialMonoid :: Monoid (Trivial a) where
