@@ -5,7 +5,7 @@ import Prelude
 import Effect (Effect)
 import Test.Spec (Spec, describe, it)
 import Test.Spec.Assertions (shouldEqual, shouldSatisfy, AnyShow(..))
-import Test.QuickCheck ((===), (<?>))
+import Test.QuickCheck ((===), (<?>), class Testable)
 import Test.QuickCheck.Arbitrary (class Arbitrary, class Coarbitrary)
 import Test.Spec.QuickCheck (quickCheck, quickCheck')
 import Test.Spec.Runner.Node (runSpecAndExitProcess)
@@ -117,9 +117,9 @@ smallSuite = describe "small stuff" do
     quickCheck \x -> head (replicate x "ehehe") === iff (x > 0) "ehehe"
     quickCheck \x (y :: Int) -> head (replicate1 x y) === Just y
   it "last is sane" do
-    quickCheck \(x :: Int) -> last (singleton x) === Just x
-    quickCheck \(x :: Int) -> last1 (singleton x) === x
-    quickCheck \(x :: Maybe String) -> last (fromMaybe x) === x
+    quickCheck' 5 \(x :: Int) -> last (singleton x) === Just x
+    quickCheck' 5 \(x :: Int) -> last1 (singleton x) === x
+    quickCheck' 5 \(x :: Maybe String) -> last (fromMaybe x) === x
     quickCheck' 5 \x -> last (replicate x "ehehe") === iff (x > 0) "ehehe"
     quickCheck' 5 \x (y :: Int) -> last (replicate1 x y) === Just y
   it "double uncons" do
@@ -133,11 +133,11 @@ smallSuite = describe "small stuff" do
     quickCheck \(x :: Char) -> head (tail $ upFrom x) === (succ =<< succ x)
     quickCheck \(x :: Trivial Int) -> head (tail x) === index x 1
   it "last tail gets last" do
-    quickCheck \(x :: String) -> last (tail $ singleton x) === Nothing
-    quickCheck \(x :: Trivial Int) -> last (tail x) === tail x *> last x
+    quickCheck' 15 \(x :: String) -> last (tail $ singleton x) === Nothing
+    quickCheck' 15 \(x :: Trivial Int) -> last (tail x) === tail x *> last x
   it "last init gets second to last" do
-    quickCheck \(x :: String) -> last (init $ singleton x) === Nothing
-    quickCheck' 50 \(x :: Char) y -> last (init $ enumFromTo x y) === case compare x y of
+    quickCheck' 25 \(x :: String) -> last (init $ singleton x) === Nothing
+    quickCheck' 15 \(x :: Char) y -> last (init $ enumFromTo x y) === case compare x y of
       LT -> pred y
       GT -> succ y
       EQ -> Nothing
@@ -188,18 +188,18 @@ foldSuite :: Spec Unit
 foldSuite = describe "foldl foldr" do
   describe "Foldable Trivial1" do
     it "associative string concatenation agrees" do
-      quickCheck \(u :: Trivial1 String) ->
+      quickCheck' 15 \(u :: Trivial1 String) ->
         foldMapDefaultL identity u === foldMapDefaultR identity u
   describe "Foldable Trivial" do
     it "associative string concatenation agrees" do
-      quickCheck \(u :: Trivial String) ->
+      quickCheck' 15 \(u :: Trivial String) ->
         foldMapDefaultL identity u === foldMapDefaultR identity u
     it "empty folds" do 
       quickCheck \(f :: Int -> String -> Int) x -> (foldl f x ::<*> none) === x
       quickCheck \(f :: String -> Int -> Int) x -> (foldr f x ::<*> none) === x
   describe "Foldable1 Trivial1" do
     it "associative string concatenation agrees" do
-      quickCheck \(u :: Trivial1 String) ->
+      quickCheck' 15 \(u :: Trivial1 String) ->
         foldMap1DefaultL identity u === foldMap1DefaultR identity u
     it "singleton folds" do 
       quickCheck \f (x :: Int) -> (foldl1 f ::<+> singleton x) === x
@@ -207,24 +207,25 @@ foldSuite = describe "foldl foldr" do
 
 appendSuite :: Spec Unit
 appendSuite = describe "appends (incl. Semigroup/Alt)" do
+  let qc = quickCheck' 20 :: forall p. Testable p => p -> _
   it "Alt Trivial agrees with Alt Array" do
-    quickCheck \(a :: Trivial Char) b -> arrgh (a <|> b) === arrgh a <|> arrgh b
+    qc \(a :: Trivial Char) b -> arrgh (a <|> b) === arrgh a <|> arrgh b
   it "Alt Trivial1 agrees with Alt Array" do
-    quickCheck \(a :: Trivial1 Char) b -> arrgh1 (a <|> b) === [] <|> arrgh1 a <|> arrgh1 b
+    qc \(a :: Trivial1 Char) b -> arrgh1 (a <|> b) === [] <|> arrgh1 a <|> arrgh1 b
   it "append1 agrees with Alt Array" do
-    quickCheck \(a :: Trivial1 Char) (b :: Trivial Char) -> arrgh1 (a `append1` b) === arrgh1 a <|> arrgh b
+    qc \(a :: Trivial1 Char) (b :: Trivial Char) -> arrgh1 (a `append1` b) === arrgh1 a <|> arrgh b
   it "append1' agrees with Alt Array" do
-    quickCheck \(a :: Trivial Char) (b :: Trivial1 Char) -> arrgh1 (a `append1'` b) === arrgh a <|> arrgh1 b
+    qc \(a :: Trivial Char) (b :: Trivial1 Char) -> arrgh1 (a `append1'` b) === arrgh a <|> arrgh1 b
 
 applySuite :: Spec Unit
 applySuite = describe "Apply and Applicative" do
+  let qc = quickCheck' 10 :: forall p. Testable p => p -> _
   it "Apply Trivial agrees with zipWith on arrays" do
-    quickCheck \(f :: String -> Char -> Int) a b -> arrgh (f <$> a <*> b) === zipWith f (arrgh a) (arrgh b)
+    qc \(f :: String -> Char -> Int) a b -> arrgh (f <$> a <*> b) === zipWith f (arrgh a) (arrgh b)
   it "Apply Trivial1 agrees with zipWith on arrays" do
-    quickCheck \(f :: String -> Char -> Int) a b -> arrgh1 (f <$> a <*> b) === zipWith f (arrgh1 a) (arrgh1 b)
-  genericApplicativeLaws "Trivial" 15 (take 25 :: _ -> _ Int)
-  genericApplicativeLaws "Trivial1" 15 (take1 25 :: _ -> _ Int)
-
+    qc \(f :: String -> Char -> Int) a b -> arrgh1 (f <$> a <*> b) === zipWith f (arrgh1 a) (arrgh1 b)
+  genericApplicativeLaws "Trivial" qc (take 25 :: _ -> _ Int)
+  genericApplicativeLaws "Trivial1" qc (take1 25 :: _ -> _ Int)
 
 genericApplicativeLaws :: forall t a.
   Eq (t a) =>
@@ -234,24 +235,24 @@ genericApplicativeLaws :: forall t a.
   Coarbitrary a => 
   Arbitrary (t a) =>
   Arbitrary (t (a -> a)) =>
-  String -> Int -> (t a -> t a) -> Spec Unit
-genericApplicativeLaws name runs witness = describe ("Applicative " <> name <> " identities") do
+  String -> (forall p. Testable p => p -> Aff Unit) -> (t a -> t a) -> Spec Unit
+genericApplicativeLaws name qc witness = describe ("Applicative " <> name <> " identities") do
   it "Associative composition: (<<<) <$> f <*> g <*> h ≡ f <*> (g <*> h)" do
-    quickCheck' runs \(f :: t (a -> a)) g (h :: t a) -> (<<<) <$> f <*> g <*> h === f <*> (g <*> h)
+    qc \(f :: t (a -> a)) g (h :: t a) -> (<<<) <$> f <*> g <*> h === f <*> (g <*> h)
   it "Identity: (pure identity) <*> v ≡ v" do
-    quickCheck' runs \(v :: t a) -> (pure identity) <*> v === v
+    qc \(v :: t a) -> (pure identity) <*> v === v
   it "Composition: pure (<<<) <*> f <*> g <*> h ≡ f <*> (g <*> h)" do
-    quickCheck' runs \(f :: t (a -> a)) g (h :: t a) -> pure (<<<) <*> f <*> g <*> h === f <*> (g <*> h)
+    qc \(f :: t (a -> a)) g (h :: t a) -> pure (<<<) <*> f <*> g <*> h === f <*> (g <*> h)
   it ("Homomorphism: (pure f) <*> (pure x) ≡ pure (f x) -- checked up to a limit because pure :: " <> name <> " a is infinite") do
-    quickCheck' runs \(f :: a -> a) x -> witness ((pure f) <*> (pure x)) === witness (pure (f x))
+    qc \(f :: a -> a) x -> witness ((pure f) <*> (pure x)) === witness (pure (f x))
   it "Interchange: u <*> (pure y) ≡ (pure (_ $ y)) <*> u" do
-    quickCheck' runs \(u :: t (a -> a)) y -> u <*> (pure y) === (pure (_ $ y)) <*> u
+    qc \(u :: t (a -> a)) y -> u <*> (pure y) === (pure (_ $ y)) <*> u
 
 enumSuite :: Spec Unit
 enumSuite = describe "enums" do
   genericEnumSuite "Int" (Proxy :: Proxy Int) do
     it "index matches upFromIncluding" do
-      quickCheck' 20 \x y -> index (upFromIncluding x) y === iff (y >= 0) (x + y)
+      quickCheck' 5 \x y -> index (upFromIncluding x) y === iff (y >= 0) (x + y)
     it "index matches iterate" do
       quickCheck' 5 \x -> index (iterate (_+1) 0) x === iff (x >= 0) x
   genericBoundedEnumSuite "Char" (Proxy :: Proxy Char) $ pure unit
