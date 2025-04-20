@@ -216,7 +216,7 @@ appendSuite = describe "Semigroup and Alternative" do
     qc \(a :: Trivial1 Char) (b :: Trivial Char) -> arrgh1 (a `append1` b) === arrgh1 a <|> arrgh b
   it "append1' agrees with Alt Array" do
     qc \(a :: Trivial Char) (b :: Trivial1 Char) -> arrgh1 (a `append1'` b) === arrgh a <|> arrgh1 b
-  genericPlusLaws "Trivial" qc (Proxy :: Proxy (Trivial Int))
+  genericAlternativeLaws "Trivial" qc (Proxy :: Proxy (Trivial Int))
   genericAltLaws "Trivial1" qc (Proxy :: Proxy (Trivial1 Int))
   genericAlternativeLaws "MaybeEmpty Identity" qc (Proxy :: Proxy (MaybeEmpty Identity Int))
   genericAlternativeLaws "MaybeEmpty NonEmptyList" qc (Proxy :: Proxy (MaybeEmpty NEL.NonEmptyList Int))

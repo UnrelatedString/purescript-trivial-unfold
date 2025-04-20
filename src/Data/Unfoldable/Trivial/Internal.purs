@@ -28,9 +28,9 @@ import Data.Unfoldable
   , unfoldr
   , none
   )
-import Data.Tuple (uncurry)
+import Data.Tuple (uncurry, fst, snd)
 import Data.Tuple.Nested ((/\), type (/\))
-import Data.Maybe (Maybe(..), maybe')
+import Data.Maybe (Maybe(..), maybe', fromMaybe)
 import Data.Exists (Exists, mkExists, runExists)
 import Data.Bifunctor (lmap)
 import Data.Functor.Invariant (class Invariant, imapF)
@@ -42,7 +42,7 @@ import Data.Filterable
   , filterMapDefault
   )
 import Data.Either (Either(..), either)
-import Control.Alternative (class Alt, class Plus, (<|>))
+import Control.Alternative (class Alt, class Plus, class Alternative)
 import Control.Lazy (class Lazy)
 import Test.QuickCheck.Arbitrary (class Arbitrary, class Coarbitrary, arbitrary)
 import Test.QuickCheck.Gen (sized)
@@ -188,9 +188,9 @@ instance trivialFilterable :: Filterable Trivial where
 -- | Concatenation.
 -- |
 -- | Do not use this to create a data structure. Please use Data.List.Lazy instead.
-instance trivialAlt :: Alt Trivial where
-  alt :: forall a. Trivial a -> Trivial a -> Trivial a
-  alt t = untrivial (untrivial eAlt t)
+instance trivialSemigroup :: Semigroup (Trivial a) where
+  append :: Trivial a -> Trivial a -> Trivial a
+  append t = untrivial (untrivial eAlt t)
     where eAlt :: forall b b'. Generator a b -> b -> Generator a b' -> b' -> Trivial a
           eAlt f seed f' seed' = unfoldr appended $ Right seed
             where appended :: Either b' b -> Maybe (a /\ Either b' b)
@@ -204,19 +204,31 @@ instance trivialAlt :: Alt Trivial where
 instance trivialPlus :: Plus Trivial where
   empty = none
 
-instance trivialSemigroup :: Semigroup (Trivial a) where
-  append = (<|>)
+-- | **Not** concatenation! `(<|>)` clobbers a prefix of the right argument
+-- | of the length of the left in order to satisfy the `Alternative` laws.
+-- | (Thanks to @xgrommx's implementation in `ZipList`!)
+instance trivialAlt :: Alt Trivial where
+  alt :: forall a. Trivial a -> Trivial a -> Trivial a
+  alt t = untrivial (untrivial eAlt t)
+    where eAlt :: forall b b'. Generator a b -> b -> Generator a b' -> b' -> Trivial a
+          eAlt f seed f' seed' = unfoldr smooshed $ Just seed /\ seed'
+            where smooshed :: Maybe b /\ b' -> Maybe (a /\ Maybe b /\ b')
+                  smooshed (Just b /\ b') = do
+                    let dom = f b
+                    a' /\ nb' <- f' b'
+                    Just $ fromMaybe a' (fst <$> dom) /\ map snd dom /\ nb'
+                  smooshed (Nothing /\ b') = map (Nothing /\ _) <$> f' b'
+                    
 
 instance trivialMonoid :: Monoid (Trivial a) where
   mempty = none
 
--- | Zipwith; chosen over the `Monad`- and `Alternative`-compatible
+-- | Zipwith; chosen over the `Monad`-compatible
 -- | nondet choice used for `Array` etc.
 -- | because that would require effectively forcing one argument and either
 -- | re-evaluating it constantly or storing its elements in a real container
 -- | at which point please please please just do that without using `Trivial`.
 -- | Length is the minimum of the arguments' lengths.
--- | (The violated `Alternative` law is distributivity.)
 instance trivialApply :: Apply Trivial where
   apply :: forall a c. Trivial (a -> c) -> Trivial a -> Trivial c
   apply tg = untrivial (untrivial eApply tg)
@@ -232,6 +244,8 @@ instance trivialApply :: Apply Trivial where
 -- | If you just want one element, use `singleton` instead.
 instance trivialApplicative :: Applicative Trivial where
   pure a = unfoldr (const $ Just $ a /\ unit) unit
+
+instance trivialAlternative :: Alternative Trivial
 
 -- | Does not and cannot memoize the values being produced to compare.
 -- | Please consider using Data.List.Lazy or your strict container of choice
