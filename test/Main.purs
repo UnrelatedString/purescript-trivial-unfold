@@ -61,7 +61,7 @@ import Data.Unfoldable.MaybeEmpty
   )
 
 import Data.Maybe (Maybe(..), isJust, isNothing)
-import Control.Alternative ((<|>), guard, empty)
+import Control.Alternative ((<|>), guard, empty, class Alternative, class Alt)
 import Data.Enum (class Enum, class BoundedEnum, succ, pred, upFrom, downFrom, upFromIncluding, enumFromTo)
 import Data.Tuple (snd)
 import Data.Tuple.Nested ((/\), type (/\))
@@ -206,7 +206,7 @@ foldSuite = describe "foldl foldr" do
       quickCheck \f (x :: Int) -> (foldr1 f ::<+> singleton x) === x
 
 appendSuite :: Spec Unit
-appendSuite = describe "appends (incl. Semigroup/Alt)" do
+appendSuite = describe "Semigroup and Alternative" do
   let qc = quickCheck' 20 :: forall p. Testable p => p -> _
   it "Alt Trivial agrees with Alt Array" do
     qc \(a :: Trivial Char) b -> arrgh (a <|> b) === arrgh a <|> arrgh b
@@ -216,6 +216,47 @@ appendSuite = describe "appends (incl. Semigroup/Alt)" do
     qc \(a :: Trivial1 Char) (b :: Trivial Char) -> arrgh1 (a `append1` b) === arrgh1 a <|> arrgh b
   it "append1' agrees with Alt Array" do
     qc \(a :: Trivial Char) (b :: Trivial1 Char) -> arrgh1 (a `append1'` b) === arrgh a <|> arrgh1 b
+  genericAlternativeLaws "Trivial" qc (Proxy :: Proxy (Trivial Int))
+  genericAltLaws "Trivial1" qc (Proxy :: Proxy (Trivial1 Int))
+  genericAlternativeLaws "MaybeEmpty NonEmptyList" qc (Proxy :: Proxy (MaybeEmpty NEL.NonEmptyList Int))
+
+genericAltLaws :: forall t a.
+  Eq (t a) =>
+  Show (t a) =>
+  Alt t =>
+  Arbitrary a =>
+  Coarbitrary a => 
+  Arbitrary (t a) =>
+  String -> (forall p. Testable p => p -> Aff Unit) -> Proxy (t a) -> Spec Unit
+genericAltLaws name qc _ = describe ("Alt " <> name <> " laws") do
+  it "Associativity: (x <|> y) <|> z ≡ x <|> (y <|> z)" do
+    qc \(x :: t a) y z -> (x <|> y) <|> z === x <|> (y <|> z)
+  it "Distributivity: f <$> (x <|> y) ≡ (f <$> x) <|> (f <$> y)" do
+    qc \(f :: a -> a) (x :: t a) y -> f <$> (x <|> y) === (f <$> x) <|> (f <$> y)
+
+genericAlternativeLaws :: forall t a.
+  Eq (t a) =>
+  Show (t a) =>
+  Alternative t =>
+  Arbitrary a =>
+  Coarbitrary a => 
+  Arbitrary (t a) =>
+  Arbitrary (t (a -> a)) =>
+  String -> (forall p. Testable p => p -> Aff Unit) -> Proxy (t a) -> Spec Unit
+genericAlternativeLaws name qc proxy = do
+  genericAltLaws name qc proxy
+  describe ("Plus " <> name <> " laws") do
+    it "Left identity: empty <|> x ≡ x" do
+      qc \(x :: t a) -> empty <|> x === x
+    it "Right identity: x <|> empty ≡ x" do
+      qc \(x :: t a) -> x <|> empty === x
+    it "Annihilation: f <$> empty ≡ empty" do
+      qc \(f :: a -> a) -> f <$> empty === (empty :: t a)
+  describe ("Alternative " <> name <> " laws") do
+    it "Distributivity: (f <|> g) <*> x ≡ (f <*> x) <|> (g <*> x)" do
+      qc \(f :: t (a -> a)) g x -> (f <|> g) <*> x === (f <*> x) <|> (g <*> x)
+    it "Annihilation: empty <*> f ≡ empty" do
+      qc \(f :: t a) -> empty <*> f === (empty :: t a)
 
 applySuite :: Spec Unit
 applySuite = describe "Apply and Applicative" do
@@ -243,7 +284,7 @@ genericApplicativeLaws name qc witness = describe ("Applicative " <> name <> " i
     qc \(v :: t a) -> (pure identity) <*> v === v
   it "Composition: pure (<<<) <*> f <*> g <*> h ≡ f <*> (g <*> h)" do
     qc \(f :: t (a -> a)) g (h :: t a) -> pure (<<<) <*> f <*> g <*> h === f <*> (g <*> h)
-  it ("Homomorphism: (pure f) <*> (pure x) ≡ pure (f x) -- checked up to a limit because pure :: " <> name <> " a is infinite") do
+  it ("Homomorphism: (pure f) <*> (pure x) ≡ pure (f x) -- checked up to a limit if pure :: " <> name <> " a is infinite") do
     qc \(f :: a -> a) x -> witness ((pure f) <*> (pure x)) === witness (pure (f x))
   it "Interchange: u <*> (pure y) ≡ (pure (_ $ y)) <*> u" do
     qc \(u :: t (a -> a)) y -> u <*> (pure y) === (pure (_ $ y)) <*> u
