@@ -25,7 +25,7 @@ import Data.Foldable (class Foldable, foldrDefault, foldMapDefaultL, foldl, inte
 import Data.Semigroup.Foldable (class Foldable1, foldr1Default, foldMap1DefaultL)
 import Data.Unfoldable1 (class Unfoldable1, unfoldr1)
 import Data.Unfoldable (class Unfoldable, none)
-import Data.These (These(..), these)
+import Data.These (These(..), these, maybeThese, theseLeft, theseRight)
 import Data.Tuple (fst, snd, uncurry)
 import Data.Tuple.Nested ((/\), type (/\))
 import Data.Maybe (Maybe(..), maybe)
@@ -33,7 +33,6 @@ import Data.Either (Either(..), note, either)
 import Data.Exists (Exists, mkExists, runExists)
 import Data.Functor.Invariant (class Invariant, imapF)
 import Data.Bifunctor (lmap, bimap)
-import Data.Bitraversable (bisequence)
 import Data.Profunctor.Strong ((&&&), (***))
 import Control.Lazy (class Lazy)
 import Control.Alternative (class Alt)
@@ -200,7 +199,7 @@ instance trivial1Alt :: Alt Trivial1 where
                       (
                         these identity identity const
                       ***
-                        bisequence
+                        \x -> maybeThese (join $ theseLeft x) (join $ theseRight x)
                       )
 
 -- | Does not and cannot memoize the values being produced to compare.
