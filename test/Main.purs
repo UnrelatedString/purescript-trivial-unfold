@@ -211,11 +211,11 @@ appendSuite = describe "appends (incl. Semigroup/Alt)" do
   it "Alt Trivial agrees with Alt Array" do
     quickCheck \(a :: Trivial Char) b -> arrgh (a <|> b) === arrgh a <|> arrgh b
   it "Alt Trivial1 agrees with Alt Array" do
-    quickCheck \(a :: Trivial1 Char) b -> runTrivial1 (a <|> b) === [] <|> runTrivial1 a <|> runTrivial1 b
+    quickCheck \(a :: Trivial1 Char) b -> arrgh1 (a <|> b) === [] <|> arrgh1 a <|> arrgh1 b
   it "append1 agrees with Alt Array" do
-    quickCheck \(a :: Trivial1 Char) (b :: Trivial Char) -> runTrivial1 (a `append1` b) === runTrivial1 a <|> arrgh b
+    quickCheck \(a :: Trivial1 Char) (b :: Trivial Char) -> arrgh1 (a `append1` b) === arrgh1 a <|> arrgh b
   it "append1' agrees with Alt Array" do
-    quickCheck \(a :: Trivial Char) (b :: Trivial1 Char) -> runTrivial1 (a `append1'` b) === arrgh a <|> runTrivial1 b
+    quickCheck \(a :: Trivial Char) (b :: Trivial1 Char) -> arrgh1 (a `append1'` b) === arrgh a <|> arrgh1 b
 
 applySuite :: Spec Unit
 applySuite = describe "Apply and Applicative" do
@@ -224,10 +224,10 @@ applySuite = describe "Apply and Applicative" do
   it "Apply Trivial1 agrees with zipWith on arrays" do
     quickCheck \(f :: String -> Char -> Int) a b -> arrgh1 (f <$> a <*> b) === zipWith f (arrgh1 a) (arrgh1 b)
 
-genericApplicativeLaws :: forall t. Eq1 t => Applicative t => String -> Proxy t -> Spec Unit
+genericApplicativeLaws :: forall t. Eq1 t => Show (t (forall a. Show a => a)) => Applicative t => String -> Proxy t -> Spec Unit
 genericApplicativeLaws name _ = describe ("Applicative " <> name <> " identities") do
-  pure unit
-  -- okay yeah no I'm just going to write an Eq instance it's like basically the same thing anywayss"
+  pure unit --it "Associative composition: (<<<) <$> f <*> g <*> h ≡ f <*> (g <*> h)" do
+
 
 enumSuite :: Spec Unit
 enumSuite = describe "enums" do
