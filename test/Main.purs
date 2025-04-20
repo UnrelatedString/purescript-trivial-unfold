@@ -6,7 +6,7 @@ import Effect (Effect)
 import Test.Spec (Spec, describe, it)
 import Test.Spec.Assertions (shouldEqual, shouldSatisfy, AnyShow(..))
 import Test.QuickCheck ((===), (<?>))
-import Test.QuickCheck.Arbitrary (class Arbitrary)
+import Test.QuickCheck.Arbitrary (class Arbitrary, class Coarbitrary)
 import Test.Spec.QuickCheck (quickCheck, quickCheck')
 import Test.Spec.Runner.Node (runSpecAndExitProcess)
 import Test.Spec.Reporter.June.Pretty (prettyReporter)
@@ -80,7 +80,6 @@ import Control.Extend (duplicate)
 import Data.Identity (Identity)
 import Data.Distributive (distribute)
 import Data.List.NonEmpty as NEL
-import Data.Eq (class Eq1)
 
 iff :: forall a. Boolean -> a -> Maybe a
 iff = ($>) <<< guard
@@ -227,10 +226,18 @@ applySuite = describe "Apply and Applicative" do
   genericApplicativeLaws "Trivial1" (Proxy :: Proxy (Trivial1 Int))
 
 
-genericApplicativeLaws :: forall t a. Eq (t a) => Show (t a) => Applicative t => String -> Proxy (t a) -> Spec Unit
+genericApplicativeLaws :: forall t a.
+  Eq (t a) =>
+  Show (t a) =>
+  Applicative t =>
+  Arbitrary a =>
+  Coarbitrary a => 
+  Arbitrary (t a) =>
+  Arbitrary (t (a -> a)) =>
+  String -> Proxy (t a) -> Spec Unit
 genericApplicativeLaws name _ = describe ("Applicative " <> name <> " identities") do
   it "Associative composition: (<<<) <$> f <*> g <*> h ≡ f <*> (g <*> h)" do
-    quickCheck \(f :: t (_ -> a)) g (h :: t a) -> (<<<) <$> f <*> g <*> h === f <*> (g <*> h)
+    quickCheck \(f :: t (a -> a)) g (h :: t a) -> (<<<) <$> f <*> g <*> h === f <*> (g <*> h)
 
 enumSuite :: Spec Unit
 enumSuite = describe "enums" do
