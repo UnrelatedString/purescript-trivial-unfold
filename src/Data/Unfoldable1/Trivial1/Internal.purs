@@ -21,7 +21,7 @@ import Prelude
 
 import Data.Eq (class Eq1, eq1)
 import Data.Ord (class Ord1, compare1)
-import Data.Foldable (class Foldable, foldrDefault, foldMapDefaultL, foldl)
+import Data.Foldable (class Foldable, foldrDefault, foldMapDefaultL, foldl, intercalate)
 import Data.Semigroup.Foldable (class Foldable1, foldr1Default, foldMap1DefaultL)
 import Data.Unfoldable1 (class Unfoldable1, unfoldr1)
 import Data.Unfoldable (class Unfoldable, none)
@@ -215,3 +215,6 @@ instance trivial1Ord1 :: Ord1 Trivial1 where
                 | otherwise -> a `compare` a'
               _ /\ _ /\ Nothing -> LT
               _ /\ _ /\ Just _ -> GT
+
+instance trivial1Show :: Show a => Show (Trivial1 a) where
+  show t1 = "toUnfoldable (NonEmptyArray [" <> intercalate ", " (show <$> t1) <> "])"

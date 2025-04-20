@@ -91,6 +91,9 @@ oughta = map AnyShow >>> shouldSatisfy
 arrgh :: forall a. Trivial a -> Array a
 arrgh = runTrivial
 
+arrgh1 :: forall a. Trivial1 a -> Array a
+arrgh1 = runTrivial1
+
 main :: Effect Unit
 main = runSpecAndExitProcess [prettyReporter] do
   smallSuite
@@ -149,6 +152,10 @@ smallSuite = describe "small stuff" do
     quickCheck \(x :: Trivial Char) n -> drop n x === index x (max n 0)
   it "take1 agrees with index1" do
     quickCheck \(x :: Trivial1 Char) n -> refoldMap1 Last (take1 n x) === (Last $ index1 x (clamp 0 (length x - 1) (n - 1)))
+  it "Eq1 Trivial1 is reflexive" do
+    quickCheck \(x :: Trivial1 Int) -> x === x
+  it "Eq1 Trivial is reflexive" do
+    quickCheck \(x :: Trivial Int) -> x === x
   it "Ord1 Trivial1 agrees with Ord1 Array" do
     quickCheck \(x :: Trivial1 Number) y -> compare x y === compare (runTrivial1 x :: Array _) (runTrivial1 y)
   it "Ord1 Trivial agrees with Ord1 Array" do

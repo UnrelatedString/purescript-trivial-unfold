@@ -21,7 +21,7 @@ import Prelude
 
 import Data.Eq (class Eq1, eq1)
 import Data.Ord (class Ord1, compare1)
-import Data.Foldable (class Foldable, foldrDefault, foldMapDefaultL)
+import Data.Foldable (class Foldable, foldrDefault, foldMapDefaultL, intercalate)
 import Data.Unfoldable
   (class Unfoldable
   , class Unfoldable1
@@ -265,3 +265,6 @@ instance trivialOrd1 :: Ord1 Trivial where
                 | otherwise -> a `compare` a'
               _ /\ Nothing -> LT
               _ /\ Just _ -> GT
+
+instance trivialShow :: Show a => Show (Trivial a) where
+  show t = "toUnfoldable [" <> intercalate ", " (show <$> t) <> "]"
