@@ -224,7 +224,7 @@ applySuite = describe "Apply and Applicative" do
   it "Apply Trivial1 agrees with zipWith on arrays" do
     quickCheck \(f :: String -> Char -> Int) a b -> arrgh1 (f <$> a <*> b) === zipWith f (arrgh1 a) (arrgh1 b)
 
-genericApplicativeLaws :: forall t. Eq1 t => Show (t (forall a. Show a => a)) => Applicative t => String -> Proxy t -> Spec Unit
+genericApplicativeLaws :: forall t a. Eq1 t => Show (t a) => Applicative t => String -> Proxy t -> Spec Unit
 genericApplicativeLaws name _ = describe ("Applicative " <> name <> " identities") do
   pure unit --it "Associative composition: (<<<) <$> f <*> g <*> h ≡ f <*> (g <*> h)" do
 
