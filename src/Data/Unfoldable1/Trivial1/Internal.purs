@@ -25,15 +25,18 @@ import Data.Foldable (class Foldable, foldrDefault, foldMapDefaultL, foldl, inte
 import Data.Semigroup.Foldable (class Foldable1, foldr1Default, foldMap1DefaultL)
 import Data.Unfoldable1 (class Unfoldable1, unfoldr1)
 import Data.Unfoldable (class Unfoldable, none)
-import Data.Tuple (fst, uncurry)
+import Data.These (These(..), these)
+import Data.Tuple (fst, snd, uncurry)
 import Data.Tuple.Nested ((/\), type (/\))
 import Data.Maybe (Maybe(..), maybe)
 import Data.Either (Either(..), note, either)
 import Data.Exists (Exists, mkExists, runExists)
 import Data.Functor.Invariant (class Invariant, imapF)
 import Data.Bifunctor (lmap, bimap)
+import Data.Bitraversable (bisequence)
+import Data.Profunctor.Strong ((&&&), (***))
 import Control.Lazy (class Lazy)
-import Control.Alternative (class Alt, (<|>))
+import Control.Alternative (class Alt)
 import Control.Apply (lift2)
 import Control.Biapply (bilift2)
 import Test.QuickCheck.Arbitrary (class Arbitrary, class Coarbitrary, arbitrary)
@@ -152,9 +155,9 @@ instance trivial1Lazy :: Lazy (Trivial1 a) where
 -- | Concatenation.
 -- |
 -- | Do not use this to create a data structure. Please use Data.List.Lazy instead.
-instance trivial1Alt :: Alt Trivial1 where
-  alt :: forall a. Trivial1 a -> Trivial1 a -> Trivial1 a
-  alt t1 = untrivial1 (untrivial1 eAlt t1)
+instance trivial1Semigroup :: Semigroup (Trivial1 a) where
+  append :: Trivial1 a -> Trivial1 a -> Trivial1 a
+  append t1 = untrivial1 (untrivial1 eAlt t1)
     where eAlt :: forall b b'. Generator1 a b -> b -> Generator1 a b' -> b' -> Trivial1 a
           eAlt f seed f' seed' = unfoldr1 appended $ Right seed
             where appended :: Either b' b -> a /\ Maybe (Either b' b)
@@ -180,8 +183,25 @@ instance trivial1Apply :: Apply Trivial1 where
 instance trivial1Applicative :: Applicative Trivial1 where
   pure a = unfoldr1 (const $ a /\ Just unit) unit
 
-instance trivial1Semigroup :: Semigroup (Trivial1 a) where
-  append = (<|>)
+-- | **Not** concatenation! `(<|>)` clobbers a prefix of the right argument
+-- | of the length of the left for consistency with `Alternative Trivial`,
+-- | although `Trivial1` itself fundamentally lacks a `Plus` instance.
+instance trivial1Alt :: Alt Trivial1 where
+  alt :: forall a. Trivial1 a -> Trivial1 a -> Trivial1 a
+  alt t1 = untrivial1 (untrivial1 eAlt t1)
+    where eAlt :: forall b b'. Generator1 a b -> b -> Generator1 a b' -> b' -> Trivial1 a
+          eAlt f seed f' seed' = unfoldr1 smooshed $ Both seed seed'
+            where smooshed :: These b b' -> a /\ Maybe (These b b')
+                  smooshed =
+                      bimap f f'
+                    >>>
+                      (bimap fst fst &&& bimap snd snd) -- unzip where 
+                    >>>
+                      (
+                        these identity identity const
+                      ***
+                        bisequence
+                      )
 
 -- | Does not and cannot memoize the values being produced to compare.
 -- | Please consider using Data.List.Lazy or your strict container of choice

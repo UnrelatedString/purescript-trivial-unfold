@@ -39,7 +39,13 @@
               "prelude": ">=6.0.2 <7.0.0"
             },
             {
+              "profunctor": ">=6.0.1 <7.0.0"
+            },
+            {
               "quickcheck": ">=8.0.1 <9.0.0"
+            },
+            {
+              "these": ">=6.0.0 <7.0.0"
             },
             {
               "tuples": ">=7.0.0 <8.0.0"
@@ -82,6 +88,7 @@
             "prelude",
             "profunctor",
             "quickcheck",
+            "quickcheck-laws",
             "random",
             "record",
             "refs",
@@ -89,6 +96,7 @@
             "st",
             "strings",
             "tailrec",
+            "these",
             "transformers",
             "tuples",
             "type-equality",
@@ -172,6 +180,7 @@
             "prelude",
             "profunctor",
             "quickcheck",
+            "quickcheck-laws",
             "random",
             "record",
             "refs",
@@ -182,6 +191,7 @@
             "st",
             "strings",
             "tailrec",
+            "these",
             "transformers",
             "trivial-unfold",
             "tuples",
@@ -1595,6 +1605,15 @@
         "unfoldable"
       ]
     },
+    "quickcheck-laws": {
+      "type": "registry",
+      "version": "7.0.0",
+      "integrity": "sha256-rnzVTiDnymzYkvnhI8EvPwrmO8LgcTnrMTuiI172Tkc=",
+      "dependencies": [
+        "enums",
+        "quickcheck"
+      ]
+    },
     "random": {
       "type": "registry",
       "version": "6.0.0",
@@ -1760,6 +1779,19 @@
         "partial",
         "prelude",
         "refs"
+      ]
+    },
+    "these": {
+      "type": "registry",
+      "version": "6.0.0",
+      "integrity": "sha256-6poQvFzGw7Ir9mTDEbFV9N6+cUeSHe0FdzTR2ZK1o6g=",
+      "dependencies": [
+        "arrays",
+        "gen",
+        "lists",
+        "quickcheck",
+        "quickcheck-laws",
+        "tuples"
       ]
     },
     "transformers": {
