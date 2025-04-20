@@ -223,11 +223,14 @@ applySuite = describe "Apply and Applicative" do
     quickCheck \(f :: String -> Char -> Int) a b -> arrgh (f <$> a <*> b) === zipWith f (arrgh a) (arrgh b)
   it "Apply Trivial1 agrees with zipWith on arrays" do
     quickCheck \(f :: String -> Char -> Int) a b -> arrgh1 (f <$> a <*> b) === zipWith f (arrgh1 a) (arrgh1 b)
+  genericApplicativeLaws "Trivial" (Proxy :: Proxy (Trivial Int))
+  genericApplicativeLaws "Trivial1" (Proxy :: Proxy (Trivial1 Int))
 
-genericApplicativeLaws :: forall t a. Eq1 t => Show (t a) => Applicative t => String -> Proxy t -> Spec Unit
+
+genericApplicativeLaws :: forall t a. Eq (t a) => Show (t a) => Applicative t => String -> Proxy (t a) -> Spec Unit
 genericApplicativeLaws name _ = describe ("Applicative " <> name <> " identities") do
-  pure unit --it "Associative composition: (<<<) <$> f <*> g <*> h ≡ f <*> (g <*> h)" do
-
+  it "Associative composition: (<<<) <$> f <*> g <*> h ≡ f <*> (g <*> h)" do
+    quickCheck \(f :: t (_ -> a)) g (h :: t a) -> (<<<) <$> f <*> g <*> h === f <*> (g <*> h)
 
 enumSuite :: Spec Unit
 enumSuite = describe "enums" do
