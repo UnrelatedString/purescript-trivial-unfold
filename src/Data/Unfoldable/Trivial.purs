@@ -20,6 +20,7 @@ module Data.Unfoldable.Trivial
   , refold
   , emptyIfNone
   , catMaybes
+  , fuse
   ) where
 
 import Data.Unfoldable.Trivial.Internal
@@ -57,6 +58,7 @@ import Data.Unfoldable (class Unfoldable, unfoldr, none)
 import Data.Unfoldable1 (class Unfoldable1, unfoldr1, singleton)
 import Data.Foldable (foldl, foldr, foldMap, fold)
 import Data.Traversable (traverse)
+import Data.Bitraversable (ltraverse)
 import Data.Maybe (Maybe(..), maybe)
 import Data.Tuple (snd)
 import Data.Tuple.Nested ((/\), type (/\))
@@ -187,3 +189,9 @@ emptyIfNone t
 -- | Unwrap `Just`s and discard `Nothing`s.
 catMaybes :: forall u a. Unfoldable u => Trivial (Maybe a) -> u a
 catMaybes = runTrivial <<< compact
+
+-- | Collect `Just`s then stop at the first `Nothing`.
+fuse :: forall u a. Unfoldable u => Trivial (Maybe a) -> u a
+fuse = untrivial eDrop
+  where eDrop :: forall b. Generator (Maybe a) b -> b -> u a
+        eDrop f seed = unfoldr (f >>> ltraverse identity) seed
