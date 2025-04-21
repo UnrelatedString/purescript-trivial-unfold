@@ -40,7 +40,6 @@ newtype MaybeEmpty :: forall k. (k -> Type) -> k -> Type
 newtype MaybeEmpty f a = MaybeEmpty (Maybe (f a))
 
 derive instance Newtype (MaybeEmpty f a) _
-derive newtype instance Show (f a) => Show (MaybeEmpty f a)
 derive newtype instance Arbitrary (f a) => Arbitrary (MaybeEmpty f a)
 derive newtype instance Coarbitrary (f a) => Coarbitrary (MaybeEmpty f a)
 derive newtype instance Semigroup (f a) => Semigroup (MaybeEmpty f a)
@@ -51,11 +50,14 @@ derive instance Generic (MaybeEmpty f a) _
 derive instance Eq1 f => Eq1 (MaybeEmpty f)
 derive instance Ord1 f => Ord1 (MaybeEmpty f)
 
-instance (Eq1 f, Eq a) => Eq (MaybeEmpty f a) where
+instance maybeEmptyShow :: (Show (f a)) => Show (MaybeEmpty f a) where
+  show (MaybeEmpty m) = "(MaybeEmpty " <> show m <> ")"
+
+instance maybeEmptyEq :: (Eq1 f, Eq a) => Eq (MaybeEmpty f a) where
   eq (MaybeEmpty Nothing) (MaybeEmpty Nothing) = true
   eq (MaybeEmpty x) (MaybeEmpty y) = (eq1 <$> x <*> y) == Just true
 
-instance (Ord1 f, Ord a) => Ord (MaybeEmpty f a) where
+instance maybeEmptyOrd :: (Ord1 f, Ord a) => Ord (MaybeEmpty f a) where
   compare = compare1
 
 instance maybeEmptyUnfoldable1 :: Unfoldable1 f => Unfoldable1 (MaybeEmpty f) where

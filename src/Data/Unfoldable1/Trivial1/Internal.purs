@@ -19,19 +19,23 @@ module Data.Unfoldable1.Trivial1.Internal
 
 import Prelude
 
-import Data.Foldable (class Foldable, foldrDefault, foldMapDefaultL, foldl)
+import Data.Eq (class Eq1, eq1)
+import Data.Ord (class Ord1, compare1)
+import Data.Foldable (class Foldable, foldrDefault, foldMapDefaultL, foldl, intercalate)
 import Data.Semigroup.Foldable (class Foldable1, foldr1Default, foldMap1DefaultL)
 import Data.Unfoldable1 (class Unfoldable1, unfoldr1)
 import Data.Unfoldable (class Unfoldable, none)
-import Data.Tuple (fst, uncurry)
+import Data.These (These(..), these, maybeThese, theseLeft, theseRight)
+import Data.Tuple (fst, snd, uncurry)
 import Data.Tuple.Nested ((/\), type (/\))
 import Data.Maybe (Maybe(..), maybe)
 import Data.Either (Either(..), note, either)
 import Data.Exists (Exists, mkExists, runExists)
 import Data.Functor.Invariant (class Invariant, imapF)
 import Data.Bifunctor (lmap, bimap)
+import Data.Profunctor.Strong ((&&&), (***))
 import Control.Lazy (class Lazy)
-import Control.Alternative (class Alt, (<|>))
+import Control.Alternative (class Alt)
 import Control.Apply (lift2)
 import Control.Biapply (bilift2)
 import Test.QuickCheck.Arbitrary (class Arbitrary, class Coarbitrary, arbitrary)
@@ -150,9 +154,9 @@ instance trivial1Lazy :: Lazy (Trivial1 a) where
 -- | Concatenation.
 -- |
 -- | Do not use this to create a data structure. Please use Data.List.Lazy instead.
-instance trivial1Alt :: Alt Trivial1 where
-  alt :: forall a. Trivial1 a -> Trivial1 a -> Trivial1 a
-  alt t1 = untrivial1 (untrivial1 eAlt t1)
+instance trivial1Semigroup :: Semigroup (Trivial1 a) where
+  append :: Trivial1 a -> Trivial1 a -> Trivial1 a
+  append t1 = untrivial1 (untrivial1 eAlt t1)
     where eAlt :: forall b b'. Generator1 a b -> b -> Generator1 a b' -> b' -> Trivial1 a
           eAlt f seed f' seed' = unfoldr1 appended $ Right seed
             where appended :: Either b' b -> a /\ Maybe (Either b' b)
@@ -178,5 +182,61 @@ instance trivial1Apply :: Apply Trivial1 where
 instance trivial1Applicative :: Applicative Trivial1 where
   pure a = unfoldr1 (const $ a /\ Just unit) unit
 
-instance trivial1Semigroup :: Semigroup (Trivial1 a) where
-  append = (<|>)
+-- | **Not** concatenation! `(<|>)` clobbers a prefix of the right argument
+-- | of the length of the left for consistency with `Alternative Trivial`,
+-- | although `Trivial1` itself fundamentally lacks a `Plus` instance.
+instance trivial1Alt :: Alt Trivial1 where
+  alt :: forall a. Trivial1 a -> Trivial1 a -> Trivial1 a
+  alt t1 = untrivial1 (untrivial1 eAlt t1)
+    where eAlt :: forall b b'. Generator1 a b -> b -> Generator1 a b' -> b' -> Trivial1 a
+          eAlt f seed f' seed' = unfoldr1 smooshed $ Both seed seed'
+            where smooshed :: These b b' -> a /\ Maybe (These b b')
+                  smooshed =
+                      bimap f f'
+                    >>>
+                      (bimap fst fst &&& bimap snd snd)
+                    >>>
+                      (
+                        these identity identity const
+                      ***
+                        -- this SO feels like it should be a library feature
+                        \x -> maybeThese (join $ theseLeft x) (join $ theseRight x)
+                      )
+
+-- | Does not and cannot memoize the values being produced to compare.
+-- | Please consider using Data.List.Lazy or your strict container of choice
+-- | instead if you have any intention of using this for anything else.
+instance trivial1Eq :: Eq a => Eq (Trivial1 a) where
+  eq = eq1
+
+instance trivial1Ord :: Ord a => Ord (Trivial1 a) where
+  compare = compare1
+
+instance trivial1Eq1 :: Eq1 Trivial1 where
+  eq1 :: forall a. Eq a => Trivial1 a -> Trivial1 a -> Boolean
+  eq1 t1 = untrivial1 (untrivial1 eEq1 t1)
+    where eEq1 :: forall b b'. Generator1 a b -> b -> Generator1 a b' -> b' -> Boolean
+          eEq1 f b f' b' =
+            case f b /\ f' b' of
+              (a /\ Nothing) /\ a' /\ Nothing -> a == a'
+              (a /\ Just nb) /\ a' /\ Just nb'
+                | a == a' -> eEq1 f nb f' nb' -- && does short circuit but I don't want to count on it
+              _ -> false
+
+instance trivial1Ord1 :: Ord1 Trivial1 where
+  compare1 :: forall a. Ord a => Trivial1 a -> Trivial1 a -> Ordering
+  compare1 t1 = untrivial1 (untrivial1 eCompare1 t1)
+    where eCompare1 :: forall b b'. Generator1 a b -> b -> Generator1 a b' -> b' -> Ordering
+          eCompare1 f b f' b' =
+            case f b /\ f' b' of
+              (a /\ Nothing) /\ a' /\ Nothing -> a `compare` a'
+              (a /\ Just nb) /\ a' /\ Just nb'
+                | a == a' -> eCompare1 f nb f' nb'
+                | otherwise -> a `compare` a'
+              (a /\ _) /\ a' /\ _
+                | a /= a' -> a `compare` a'
+              _ /\ _ /\ Nothing -> GT
+              _ /\ _ /\ Just _ -> LT
+
+instance trivial1Show :: Show a => Show (Trivial1 a) where
+  show t1 = "toUnfoldable (NonEmptyArray [" <> intercalate ", " (show <$> t1) <> "])"

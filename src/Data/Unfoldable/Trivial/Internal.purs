@@ -19,14 +19,16 @@ module Data.Unfoldable.Trivial.Internal
 
 import Prelude
 
-import Data.Foldable (class Foldable, foldrDefault, foldMapDefaultL)
+import Data.Eq (class Eq1, eq1)
+import Data.Ord (class Ord1, compare1)
+import Data.Foldable (class Foldable, foldrDefault, foldMapDefaultL, intercalate)
 import Data.Unfoldable
   (class Unfoldable
   , class Unfoldable1
   , unfoldr
   , none
   )
-import Data.Tuple (uncurry)
+import Data.Tuple (uncurry, fst, snd)
 import Data.Tuple.Nested ((/\), type (/\))
 import Data.Maybe (Maybe(..), maybe')
 import Data.Exists (Exists, mkExists, runExists)
@@ -186,9 +188,9 @@ instance trivialFilterable :: Filterable Trivial where
 -- | Concatenation.
 -- |
 -- | Do not use this to create a data structure. Please use Data.List.Lazy instead.
-instance trivialAlt :: Alt Trivial where
-  alt :: forall a. Trivial a -> Trivial a -> Trivial a
-  alt t = untrivial (untrivial eAlt t)
+instance trivialSemigroup :: Semigroup (Trivial a) where
+  append :: Trivial a -> Trivial a -> Trivial a
+  append t = untrivial (untrivial eAlt t)
     where eAlt :: forall b b'. Generator a b -> b -> Generator a b' -> b' -> Trivial a
           eAlt f seed f' seed' = unfoldr appended $ Right seed
             where appended :: Either b' b -> Maybe (a /\ Either b' b)
@@ -202,13 +204,26 @@ instance trivialAlt :: Alt Trivial where
 instance trivialPlus :: Plus Trivial where
   empty = none
 
-instance trivialSemigroup :: Semigroup (Trivial a) where
-  append = (<|>)
+-- | **Not** concatenation! `(<|>)` clobbers a prefix of the right argument
+-- | of the length of the left in order to satisfy the `Alternative` laws.
+-- | (Thanks to @xgrommx's implementation in `ZipList`!)
+instance trivialAlt :: Alt Trivial where
+  alt :: forall a. Trivial a -> Trivial a -> Trivial a
+  alt t = untrivial (untrivial eAlt t)
+    where eAlt :: forall b b'. Generator a b -> b -> Generator a b' -> b' -> Trivial a
+          eAlt f seed f' seed' = unfoldr smooshed $ Just seed /\ Just seed'
+            where smooshed :: Maybe b /\ Maybe b' -> Maybe (a /\ Maybe b /\ Maybe b')
+                  smooshed (b /\ b') = (map fst top <|> map fst me) <#> (_ /\ map snd top /\ map snd me)
+                    where top = f =<< b
+                          me = f' =<< b'
+
+                    
 
 instance trivialMonoid :: Monoid (Trivial a) where
   mempty = none
 
--- | Zipwith; chosen over the `Monad`-compatible nondet choice used for `Array` etc.
+-- | Zipwith; chosen over the `Monad`-compatible
+-- | nondet choice used for `Array` etc.
 -- | because that would require effectively forcing one argument and either
 -- | re-evaluating it constantly or storing its elements in a real container
 -- | at which point please please please just do that without using `Trivial`.
@@ -230,3 +245,39 @@ instance trivialApplicative :: Applicative Trivial where
   pure a = unfoldr (const $ Just $ a /\ unit) unit
 
 instance trivialAlternative :: Alternative Trivial
+
+-- | Does not and cannot memoize the values being produced to compare.
+-- | Please consider using Data.List.Lazy or your strict container of choice
+-- | instead if you have any intention of using this for anything else.
+instance trivialEq :: Eq a => Eq (Trivial a) where
+  eq = eq1
+
+instance trivialOrd :: Ord a => Ord (Trivial a) where
+  compare = compare1
+
+instance trivialEq1 :: Eq1 Trivial where
+  eq1 :: forall a. Eq a => Trivial a -> Trivial a -> Boolean
+  eq1 t = untrivial (untrivial eEq1 t)
+    where eEq1 :: forall b b'. Generator a b -> b -> Generator a b' -> b' -> Boolean
+          eEq1 f b f' b' =
+            case f b /\ f' b' of
+              Nothing /\ Nothing -> true
+              Just (a /\ nb) /\ Just (a' /\ nb')
+                | a == a' -> eEq1 f nb f' nb' -- && does short circuit but I don't want to count on it
+              _ -> false
+
+instance trivialOrd1 :: Ord1 Trivial where
+  compare1 :: forall a. Ord a => Trivial a -> Trivial a -> Ordering
+  compare1 t = untrivial (untrivial eCompare1 t)
+    where eCompare1 :: forall b b'. Generator a b -> b -> Generator a b' -> b' -> Ordering
+          eCompare1 f b f' b' =
+            case f b /\ f' b' of
+              Nothing /\ Nothing -> EQ
+              Just (a /\ nb) /\ Just (a' /\ nb')
+                | a == a' -> eCompare1 f nb f' nb'
+                | otherwise -> a `compare` a'
+              _ /\ Nothing -> GT
+              _ /\ Just _ -> LT
+
+instance trivialShow :: Show a => Show (Trivial a) where
+  show t = "toUnfoldable [" <> intercalate ", " (show <$> t) <> "]"
