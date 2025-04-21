@@ -194,4 +194,4 @@ catMaybes = runTrivial <<< compact
 fuse :: forall u a. Unfoldable u => Trivial (Maybe a) -> u a
 fuse = untrivial eDrop
   where eDrop :: forall b. Generator (Maybe a) b -> b -> u a
-        eDrop f seed = unfoldr (f >>> ltraverse identity) seed
+        eDrop f seed = unfoldr (f >=> ltraverse identity) seed
