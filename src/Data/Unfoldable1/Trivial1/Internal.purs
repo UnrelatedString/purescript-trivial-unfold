@@ -76,10 +76,10 @@ untrivial1 :: forall a c. (forall b. Generator1 a b -> b -> c) -> Trivial1 a -> 
 untrivial1 f (Trivial1 e) = runExists (\(Unfoldr1Call g seed) -> f g seed) e
 
 -- | Wraps both arguments to `unfoldr1` in an `Unfoldr1Call`.
-instance trivial1Unfoldable1 :: Unfoldable1 Trivial1 where
+instance Unfoldable1 Trivial1 where
   unfoldr1 f seed = Trivial1 $ mkExists $ Unfoldr1Call f seed
 
-instance trivial1Functor :: Functor Trivial1 where
+instance Functor Trivial1 where
   map :: forall a c. (a -> c) -> Trivial1 a -> Trivial1 c
   map f = untrivial1 eMap
     where eMap :: forall b. Generator1 a b -> b -> Trivial1 c
@@ -89,7 +89,7 @@ instance trivial1Functor :: Functor Trivial1 where
                           lmap f <<< g
                         ) seed
 
-instance trivial1Invariant :: Invariant Trivial1 where
+instance Invariant Trivial1 where
   imap = imapF
 
 -- | Converts to any other `Unfoldable1`.
@@ -108,7 +108,7 @@ uncons1 = untrivial1 eUncons1
   where eUncons1 :: forall b. Generator1 a b -> b -> a /\ u a
         eUncons1 f seed = f seed <#> maybe none (unfoldr1 f)
 
-instance trivial1Foldable :: Foldable Trivial1 where
+instance Foldable Trivial1 where
   foldl :: forall a c. (c -> a -> c) -> c -> Trivial1 a -> c
   foldl f foldInit = untrivial1 eFoldl
     where eFoldl :: forall b. Generator1 a b -> b -> c
@@ -127,7 +127,7 @@ instance trivial1Foldable :: Foldable Trivial1 where
 -- | needs map only into a `Semigroup` rather than a `Monoid`.
 -- |
 -- | `foldr1` uses a default implementation and may be inefficient.
-instance trivial1Foldable1 :: Foldable1 Trivial1 where
+instance Foldable1 Trivial1 where
   -- I feel like there might be a cleaner way to do this that's still elegant but eh
   foldl1 :: forall a. (a -> a -> a) -> Trivial1 a -> a
   foldl1 f t = foldl f first ::<*> rest
@@ -137,7 +137,7 @@ instance trivial1Foldable1 :: Foldable1 Trivial1 where
   foldMap1 f = foldMap1DefaultL f
 
 -- | Guaranteed finite.
-instance trivial1Arbitrary :: (Arbitrary a, Coarbitrary a) => Arbitrary (Trivial1 a) where
+instance (Arbitrary a, Coarbitrary a) => Arbitrary (Trivial1 a) where
   arbitrary = sized \size -> do
     (f :: a -> a /\ Maybe a) <- arbitrary 
     seed <- arbitrary
@@ -148,13 +148,13 @@ instance trivial1Arbitrary :: (Arbitrary a, Coarbitrary a) => Arbitrary (Trivial
         else ((i + 1) /\ _) <$> b'
     ) $ 0 /\ seed
 
-instance trivial1Lazy :: Lazy (Trivial1 a) where
+instance Lazy (Trivial1 a) where
   defer = (#) unit
 
 -- | Concatenation.
 -- |
 -- | Do not use this to create a data structure. Please use Data.List.Lazy instead.
-instance trivial1Semigroup :: Semigroup (Trivial1 a) where
+instance Semigroup (Trivial1 a) where
   append :: Trivial1 a -> Trivial1 a -> Trivial1 a
   append t1 = untrivial1 (untrivial1 eAlt t1)
     where eAlt :: forall b b'. Generator1 a b -> b -> Generator1 a b' -> b' -> Trivial1 a
@@ -169,7 +169,7 @@ instance trivial1Semigroup :: Semigroup (Trivial1 a) where
 -- | re-evaluating it constantly or storing its elements in a real container
 -- | at which point please please please just do that without using `Trivial1`.
 -- | Length is the minimum of the arguments' lengths.
-instance trivial1Apply :: Apply Trivial1 where
+instance Apply Trivial1 where
   apply :: forall a c. Trivial1 (a -> c) -> Trivial1 a -> Trivial1 c
   apply tg = untrivial1 (untrivial1 eApply tg)
     where eApply :: forall b b'. Generator1 (a -> c) b -> b -> Generator1 a b' -> b' -> Trivial1 c
@@ -179,13 +179,13 @@ instance trivial1Apply :: Apply Trivial1 where
 
 -- | Infinitely cycles to satisfy the Applicative laws!
 -- | If you just want one element, use `singleton` instead.
-instance trivial1Applicative :: Applicative Trivial1 where
+instance Applicative Trivial1 where
   pure a = unfoldr1 (const $ a /\ Just unit) unit
 
 -- | **Not** concatenation! `(<|>)` clobbers a prefix of the right argument
 -- | of the length of the left for consistency with `Alternative Trivial`,
 -- | although `Trivial1` itself fundamentally lacks a `Plus` instance.
-instance trivial1Alt :: Alt Trivial1 where
+instance Alt Trivial1 where
   alt :: forall a. Trivial1 a -> Trivial1 a -> Trivial1 a
   alt t1 = untrivial1 (untrivial1 eAlt t1)
     where eAlt :: forall b b'. Generator1 a b -> b -> Generator1 a b' -> b' -> Trivial1 a
@@ -206,13 +206,13 @@ instance trivial1Alt :: Alt Trivial1 where
 -- | Does not and cannot memoize the values being produced to compare.
 -- | Please consider using Data.List.Lazy or your strict container of choice
 -- | instead if you have any intention of using this for anything else.
-instance trivial1Eq :: Eq a => Eq (Trivial1 a) where
+instance Eq a => Eq (Trivial1 a) where
   eq = eq1
 
-instance trivial1Ord :: Ord a => Ord (Trivial1 a) where
+instance Ord a => Ord (Trivial1 a) where
   compare = compare1
 
-instance trivial1Eq1 :: Eq1 Trivial1 where
+instance Eq1 Trivial1 where
   eq1 :: forall a. Eq a => Trivial1 a -> Trivial1 a -> Boolean
   eq1 t1 = untrivial1 (untrivial1 eEq1 t1)
     where eEq1 :: forall b b'. Generator1 a b -> b -> Generator1 a b' -> b' -> Boolean
@@ -223,7 +223,7 @@ instance trivial1Eq1 :: Eq1 Trivial1 where
                 | a == a' -> eEq1 f nb f' nb' -- && does short circuit but I don't want to count on it
               _ -> false
 
-instance trivial1Ord1 :: Ord1 Trivial1 where
+instance Ord1 Trivial1 where
   compare1 :: forall a. Ord a => Trivial1 a -> Trivial1 a -> Ordering
   compare1 t1 = untrivial1 (untrivial1 eCompare1 t1)
     where eCompare1 :: forall b b'. Generator1 a b -> b -> Generator1 a b' -> b' -> Ordering
@@ -238,5 +238,5 @@ instance trivial1Ord1 :: Ord1 Trivial1 where
               _ /\ _ /\ Nothing -> GT
               _ /\ _ /\ Just _ -> LT
 
-instance trivial1Show :: Show a => Show (Trivial1 a) where
+instance Show a => Show (Trivial1 a) where
   show t1 = "toUnfoldable (NonEmptyArray [" <> intercalate ", " (show <$> t1) <> "])"

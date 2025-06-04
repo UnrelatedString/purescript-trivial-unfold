@@ -50,66 +50,66 @@ derive instance Generic (MaybeEmpty f a) _
 derive instance Eq1 f => Eq1 (MaybeEmpty f)
 derive instance Ord1 f => Ord1 (MaybeEmpty f)
 
-instance maybeEmptyShow :: (Show (f a)) => Show (MaybeEmpty f a) where
+instance (Show (f a)) => Show (MaybeEmpty f a) where
   show (MaybeEmpty m) = "(MaybeEmpty " <> show m <> ")"
 
-instance maybeEmptyEq :: (Eq1 f, Eq a) => Eq (MaybeEmpty f a) where
+instance (Eq1 f, Eq a) => Eq (MaybeEmpty f a) where
   eq (MaybeEmpty Nothing) (MaybeEmpty Nothing) = true
   eq (MaybeEmpty x) (MaybeEmpty y) = (eq1 <$> x <*> y) == Just true
 
-instance maybeEmptyOrd :: (Ord1 f, Ord a) => Ord (MaybeEmpty f a) where
+instance (Ord1 f, Ord a) => Ord (MaybeEmpty f a) where
   compare = compare1
 
-instance maybeEmptyUnfoldable1 :: Unfoldable1 f => Unfoldable1 (MaybeEmpty f) where
+instance Unfoldable1 f => Unfoldable1 (MaybeEmpty f) where
   unfoldr1 = (<<<) (MaybeEmpty <<< Just) <<< unfoldr1
 
-instance maybeEmptyUnfoldable :: Unfoldable1 f => Unfoldable (MaybeEmpty f) where
+instance Unfoldable1 f => Unfoldable (MaybeEmpty f) where
   unfoldr f seed
     | Just (a /\ seed') <- f seed = MaybeEmpty $ Just $ cons a $ unfoldr f seed'
     | otherwise = MaybeEmpty Nothing
 
-instance maybeEmptyFunctor :: Functor f => Functor (MaybeEmpty f) where
+instance Functor f => Functor (MaybeEmpty f) where
   map = over MaybeEmpty <<< map <<< map
 
-instance maybeEmptyApply :: Apply f => Apply (MaybeEmpty f) where
+instance Apply f => Apply (MaybeEmpty f) where
   apply (MaybeEmpty f) (MaybeEmpty a) = MaybeEmpty $ lift2 apply f a
 
-instance maybeEmptyApplicative :: Applicative f => Applicative (MaybeEmpty f) where
+instance Applicative f => Applicative (MaybeEmpty f) where
   pure = MaybeEmpty <<< pure <<< pure
 
-instance maybeEmptyBind :: (Bind f, Traversable f) => Bind (MaybeEmpty f) where
+instance (Bind f, Traversable f) => Bind (MaybeEmpty f) where
   bind (MaybeEmpty a) f = MaybeEmpty $ bind a $ map join <<< traverse (unwrap <<< f)
 
-instance maybeEmptyMonad :: (Applicative f, Bind f, Traversable f) => Monad (MaybeEmpty f)
+instance (Applicative f, Bind f, Traversable f) => Monad (MaybeEmpty f)
 
-instance maybeEmptyInvariant :: Functor f => Invariant (MaybeEmpty f) where
+instance Functor f => Invariant (MaybeEmpty f) where
   imap = imapF
 
 -- | Composes `Alt Maybe` with `Alt f`.
 -- | This does not seem likely to be particularly useful, but then again, what does?
 -- |
 -- | If you just want the first nonempty `MaybeEmpty f a`, `unwrap` or `toAlternative` it to `Maybe (f a)`.
-instance maybeEmptyAlt :: Alt f => Alt (MaybeEmpty f) where
+instance Alt f => Alt (MaybeEmpty f) where
   alt (MaybeEmpty (Just a)) (MaybeEmpty (Just b)) = MaybeEmpty $ Just $ a <|> b
   alt a b = over2 MaybeEmpty (<|>) a b
   
 -- | `empty = none`. Does not use `Plus f` if it exists--and given that
 -- | this is all about wrapping guaranteed non-empty containers, it probably doesn't.
-instance maybeEmptyPlus :: Alt f => Plus (MaybeEmpty f) where
+instance Alt f => Plus (MaybeEmpty f) where
   empty = MaybeEmpty Nothing
 
-instance maybeEmptyAlternative :: (Applicative f, Alt f) => Alternative (MaybeEmpty f)
+instance (Applicative f, Alt f) => Alternative (MaybeEmpty f)
 
-instance maybeEmptyExtend :: Extend f => Extend (MaybeEmpty f) where
+instance Extend f => Extend (MaybeEmpty f) where
   extend f (MaybeEmpty (Just x)) = MaybeEmpty $ Just $ x =>> (f <<< MaybeEmpty <<< Just)
   extend _ (MaybeEmpty Nothing) = MaybeEmpty Nothing
 
-instance maybeEmptyFoldable :: Foldable f => Foldable (MaybeEmpty f) where
+instance Foldable f => Foldable (MaybeEmpty f) where
   foldr f b = foldl (foldr f) b <<< unwrap
   foldl f b = foldl (foldl f) b <<< unwrap
   foldMap f = foldMap (foldMap f) <<< unwrap
 
-instance maybeEmptyTraversable :: Traversable f => Traversable (MaybeEmpty f) where
+instance Traversable f => Traversable (MaybeEmpty f) where
   traverse f = map MaybeEmpty <<< traverse (traverse f) <<< unwrap
   sequence   = map MaybeEmpty <<< traverse sequence <<< unwrap
 
