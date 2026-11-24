@@ -16,7 +16,7 @@ jobs:
           restore-keys: |
             spago-
 
-      - name: Set up Node 20
+      - name: Set up Node 26
         uses: actions/setup-node@v4
         with:
           node-version: "26.x"
