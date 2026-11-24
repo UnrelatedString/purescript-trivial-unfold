@@ -24,7 +24,7 @@ jobs:
       - name: Set up Purescript and Spago
         run: |
           npm i -g purescript
-          npm i -g spago
+          npm i -g spago@1.0.5
 
       - name: Install Spago dependencies
         run: spago fetch --pure -v
