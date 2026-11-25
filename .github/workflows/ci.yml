@@ -2,22 +2,33 @@ name: CI
 on: [push]
 
 jobs:
-  # This workflow contains a single job called "test"
   test:
-    # why is UBUNTU the only distro they have a runner for 💀💀💀
     runs-on: ubuntu-latest
     
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it. also in Mati's so I will blindly trust it
       - uses: actions/checkout@v4
 
-      # Runs a set of commands using the runners shell
+      - name: Cache Spago dependencies
+        uses: actions/cache@v4
+        with:
+          path: .spago
+          key: spago-${{ hashFiles('spago.lock') }}
+          restore-keys: |
+            spago-
+
+      - name: Set up Node 26
+        uses: actions/setup-node@v4
+        with:
+          node-version: "26.x"
+
       - name: Set up Purescript and Spago
         run: |
           npm i -g purescript
-          npm i -g spago@next
+          npm i -g spago
 
-      # Runs a single command
+      - name: Install Spago dependencies
+        run: spago fetch --pure -v
+
       - name: Build
         run: spago build --strict
 
