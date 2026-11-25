@@ -34,7 +34,7 @@ package:
   build:
     pedanticPackages: true
   publish:
-    version: 0.5.0
+    version: 1.0.0
     license: BSD-3-Clause
     location:
       githubOwner: UnrelatedString

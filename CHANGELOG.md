@@ -7,13 +7,20 @@ Notable changes to this project are documented in this file. The format is based
 Breaking changes:
 
 New features:
-- `fuse` function in `Data.Unfoldable.Trivial` gives an external interface to `Maybe`-based termination of an unfold by value (without an existential seed)
-- `takeWhile` and `dropWhile`, with no `span` worth implementing
 
 Bugfixes:
 
 Other improvements:
+
+## [v1.0.0](https://github.com/UnrelatedString/purescript-trivial-unfold/releases/tag/v1.0.0)
+
+New features:
+- `fuse` function in `Data.Unfoldable.Trivial` gives an external interface to `Maybe`-based termination of an unfold by value (without an existential seed)
+- `takeWhile` and `dropWhile`, with no `span` worth implementing
+
+Other improvements:
 - Better documentation of `Compactable Trivial` instance
+- This thing has been sitting here for like a year I think it deserves a non beta major release version
 
 ## [v0.x.x](https://github.com/UnrelatedString/purescript-trivial-unfold/releases/tag/v0.5.0) - 2025-04-20 and before
 
