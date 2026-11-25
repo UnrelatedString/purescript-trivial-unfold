@@ -52,6 +52,9 @@ import Data.Unfoldable.Trivial
   , append1
   , append1'
   , drop
+  , fuse
+  , takeWhile
+  , dropWhile
   )
 
 import Data.Unfoldable.MaybeEmpty
@@ -73,10 +76,12 @@ import Data.Foldable (foldl, foldr, foldMap, foldMapDefaultL, foldMapDefaultR, i
 import Data.Semigroup.Foldable (foldl1, foldr1, foldMap1DefaultL, foldMap1DefaultR)
 import Type.Proxy (Proxy(..))
 import Data.Array (toUnfoldable, zipWith)
+import Data.Array as Array
 import Data.Array.NonEmpty (NonEmptyArray)
 import Data.Monoid.Multiplicative (Multiplicative(..))
 import Data.Newtype (un, ala)
 import Data.Compactable (compact, applyMaybe)
+import Data.Filterable (maybeBool)
 import Control.Extend (duplicate)
 import Data.Identity (Identity)
 import Data.Distributive (distribute)
@@ -105,6 +110,7 @@ main = runSpecAndExitProcess [prettyReporter] do
   enumSuite
   newtypesSuite
   filterSuite
+  prefixFilterSuite
   exampleInTheReadmeTest
 
 smallSuite :: Spec Unit
@@ -380,6 +386,15 @@ filterSuite = describe "Compactable and Filterable" do
     runTrivial (compact empty) `shouldEqual` ([] :: Array Int)
   it "Plus identity: compact (const Nothing <$> xs) ≡ empty, except ^" do
     quickCheck \(x :: Trivial Char) -> runTrivial (compact (const (Nothing :: Maybe Char) <$> x)) === []
+
+prefixFilterSuite :: Spec Unit
+prefixFilterSuite = describe "Filtering of prefixes" do
+  it "Trivial.takeWhile agrees with Array.takeWhile" do
+    quickCheck \(x :: Array Int) (f :: Int -> Boolean) -> (takeWhile f ::<*> toUnfoldable x) === Array.takeWhile f x
+  it "Trivial.dropWhile agrees with Array.dropWhile" do
+    quickCheck \(x :: Array Int) (f :: Int -> Boolean) -> (dropWhile f ::<*> toUnfoldable x) === Array.dropWhile f x
+  it "fuse agrees with takeWhile" do
+    quickCheck \(x :: Trivial Int) (f :: Int -> Boolean) -> fuse (maybeBool f <$> x) === arrgh (takeWhile f x)
 
 -- because it would be ESPECIALLY embarrassing if this didn't work :P
 exampleInTheReadmeTest :: Spec Unit

@@ -20,6 +20,9 @@ module Data.Unfoldable.Trivial
   , refold
   , emptyIfNone
   , catMaybes
+  , fuse
+  , takeWhile
+  , dropWhile
   ) where
 
 import Data.Unfoldable.Trivial.Internal
@@ -58,12 +61,13 @@ import Data.Unfoldable (class Unfoldable, unfoldr, none)
 import Data.Unfoldable1 (class Unfoldable1, unfoldr1, singleton)
 import Data.Foldable (foldl, foldr, foldMap, fold)
 import Data.Traversable (traverse)
+import Data.Bitraversable (ltraverse)
 import Data.Maybe (Maybe(..), maybe)
 import Data.Tuple (snd)
 import Data.Tuple.Nested ((/\), type (/\))
 import Data.Newtype (un)
 import Data.Semigroup.Last (Last(..))
-import Data.Compactable (compact)
+import Data.Filterable (compact, maybeBool)
 import Control.Alternative (class Alternative, empty)
 
 -- | Returns the first element and a new `Unfoldable` generating the remaining elements,
@@ -188,3 +192,27 @@ emptyIfNone t
 -- | Unwrap `Just`s and discard `Nothing`s.
 catMaybes :: forall u a. Unfoldable u => Trivial (Maybe a) -> u a
 catMaybes = runTrivial <<< compact
+
+-- | Collect `Just`s then stop at the first `Nothing`.
+fuse :: forall u a. Unfoldable u => Trivial (Maybe a) -> u a
+fuse = untrivial eTake
+  where eTake :: forall b. Generator (Maybe a) b -> b -> u a
+        eTake f seed = unfoldr (f >=> ltraverse identity) seed
+
+-- | Keep only the longest prefix satisfying the given predicate.
+takeWhile :: forall u a. Unfoldable u => (a -> Boolean) -> Trivial a -> u a
+takeWhile p = untrivial eTake
+  where eTake :: forall b. Generator a b -> b -> u a
+        eTake f seed = unfoldr (f >=> ltraverse (maybeBool p)) seed
+
+-- | Remove the longest prefix satisfying the given predicate.
+dropWhile :: forall u a. Unfoldable u => (a -> Boolean) -> Trivial a -> u a
+dropWhile p = untrivial eDrop
+  where eDrop :: forall b. Generator a b -> b -> u a
+        eDrop f seed
+          | Just (a /\ endosperm) <- mill f seed = cons a $ unfoldr f endosperm
+          | otherwise = none
+        mill :: forall b. Generator a b -> Generator a b
+        mill f seed = case f seed of
+          Just (a /\ seed') | p a -> mill f seed'
+          result -> result
