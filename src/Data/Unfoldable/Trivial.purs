@@ -216,12 +216,3 @@ dropWhile p = untrivial eDrop
         mill f seed = case f seed of
           Just (a /\ seed') | p a -> mill f seed'
           result -> result
-
--- | Chunk off the longest prefix satisfying the given predicate,
--- | traversing one output type to avoid recomputing elements.
--- span :: forall u u' a. Unfoldable u => Unfoldable u' => Traversable u => (a -> Boolean) -> Trivial a -> { init :: u a, rest :: u' a}
-
--- oh here's my justification to put this thing in here anyways LMAOOOOO
--- | Unfold from a generating function augmented with an extra final output.
-unenfoldr :: forall u a b c. Unfoldable u => Traversable u => (b -> Either c (a /\ b)) -> b -> (u a /\ c)
-unenfoldr f seed =

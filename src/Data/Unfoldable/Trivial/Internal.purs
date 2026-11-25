@@ -154,6 +154,7 @@ instance Lazy (Trivial a) where
 -- | Not great, but inherently can't do better without an intermediate container
 -- | (or emulating such with some massive thunk buildup)
 -- | -- which you almost certainly do want at that point!
+-- | (Likewise, the outer module provides no `span`.)
 instance Compactable Trivial where
   -- | Filters elements as they're produced
   compact :: forall a. Trivial (Maybe a) -> Trivial a
