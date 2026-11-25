@@ -65,7 +65,7 @@ import Data.Tuple (snd)
 import Data.Tuple.Nested ((/\), type (/\))
 import Data.Newtype (un)
 import Data.Semigroup.Last (Last(..))
-import Data.Compactable (compact)
+import Data.Filterable (compact, maybeBool)
 import Control.Alternative (class Alternative, empty)
 
 -- | Returns the first element and a new `Unfoldable` generating the remaining elements,
@@ -193,6 +193,12 @@ catMaybes = runTrivial <<< compact
 
 -- | Collect `Just`s then stop at the first `Nothing`.
 fuse :: forall u a. Unfoldable u => Trivial (Maybe a) -> u a
-fuse = untrivial eDrop
-  where eDrop :: forall b. Generator (Maybe a) b -> b -> u a
-        eDrop f seed = unfoldr (f >=> ltraverse identity) seed
+fuse = untrivial eTake
+  where eTake :: forall b. Generator (Maybe a) b -> b -> u a
+        eTake f seed = unfoldr (f >=> ltraverse identity) seed
+
+-- | Keep only the longest prefix satisfying the given predicate.
+takeWhile :: forall u a. Unfoldable u => (a -> Boolean) -> Trivial a -> u a
+takeWhile p = untrivial eTake
+  where eTake :: forall b. Generator a b -> b -> u a
+        eTake f seed = unfoldr (f >=> ltraverse (maybeBool p)) seed

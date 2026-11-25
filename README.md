@@ -6,6 +6,8 @@
 
 A simple library providing a number of utilities for adapting from functions in other libraries with polymorphic `forall u. Unfoldable u => a` or `forall u. Unfoldable1 u => u a` result types such as `upFrom` in `purescript-enums`, implemented with existentially typed "trivial" wrappers around `unfoldr` and `unfoldr1` calls.
 
+For more sophisticated stream constructs, see [pipes](https://pursuit.purescript.org/packages/purescript-pipes). This library should only be used for lightweight manipulation of pure generating functions.
+
 ```purescript
 import Effect.Console (logShow)
 import Data.Enum (upFrom)

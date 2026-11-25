@@ -12,6 +12,7 @@ New features:
 Bugfixes:
 
 Other improvements:
+- Better documentation of `Compactable Trivial` instance
 
 ## [v0.x.x](https://github.com/UnrelatedString/purescript-trivial-unfold/releases/tag/v0.5.0) - 2025-04-20 and before
 
