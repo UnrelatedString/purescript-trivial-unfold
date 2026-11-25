@@ -21,6 +21,8 @@ module Data.Unfoldable.Trivial
   , emptyIfNone
   , catMaybes
   , fuse
+  , takeWhile
+  , dropWhile
   ) where
 
 import Data.Unfoldable.Trivial.Internal
@@ -202,3 +204,15 @@ takeWhile :: forall u a. Unfoldable u => (a -> Boolean) -> Trivial a -> u a
 takeWhile p = untrivial eTake
   where eTake :: forall b. Generator a b -> b -> u a
         eTake f seed = unfoldr (f >=> ltraverse (maybeBool p)) seed
+
+-- | Remove the longest prefix satisfying the given predicate.
+dropWhile :: forall u a. Unfoldable u => (a -> Boolean) -> Trivial a -> u a
+dropWhile p = untrivial eDrop
+  where eDrop :: forall b. Generator a b -> b -> u a
+        eDrop f seed
+          | Just (a /\ endosperm) <- mill f seed = cons a $ unfoldr f endosperm
+          | otherwise = none
+        mill :: forall b. Generator a b -> Generator a b
+        mill f seed = case f seed of
+          Just (a /\ seed') | p a -> mill f seed'
+          result -> result
