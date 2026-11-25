@@ -149,6 +149,11 @@ instance (Arbitrary a, Coarbitrary a) => Arbitrary (Trivial a) where
 instance Lazy (Trivial a) where
   defer = (#) unit
 
+-- | `separate` uses the default implementation,
+-- | running two filters separately and evaluating the entire unfold twice.
+-- | Not great, but inherently can't do better without an intermediate container
+-- | (or emulating such with some massive thunk buildup)
+-- | -- which you almost certainly do want at that point!
 instance Compactable Trivial where
   -- | Filters elements as they're produced
   compact :: forall a. Trivial (Maybe a) -> Trivial a
@@ -163,12 +168,11 @@ instance Compactable Trivial where
                           (Just <<< (_ /\ b'))
                           a
                     | otherwise = Nothing
-  -- | Default implementation, essentially running two separate filters.
-  -- | Not great, but inherently can't do better without an intermediate container
-  -- | (or emulating such with some massive thunk buildup)
-  -- | -- which you probably do want at that point!
   separate t = separateDefault t
 
+-- | See above about `separate`. `filter` and `filterMap` are good;
+-- | `partition` and `partitionMap` are inefficient and provided only out of obligation.
+-- | I really can't imagine when re-evaluating the unfold twice would be better than using an actual container.
 instance Filterable Trivial where
   partitionMap p = partitionMapDefault p
   partition p = partitionDefaultFilterMap p
