@@ -8,6 +8,7 @@ Breaking changes:
 
 New features:
 - `fuse` function in `Data.Unfoldable.Trivial` gives an external interface to `Maybe`-based termination of an unfold by value (without an existential seed)
+- `takeWhile`, `dropWhile`, and a questionable `span`
 
 Bugfixes:
 
